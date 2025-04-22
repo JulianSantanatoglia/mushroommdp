@@ -196,7 +196,7 @@ const Reservas = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-black text-white py-20 px-4 mb-20">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-black text-white py-20 px-4">
       <div className="container mx-auto">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
@@ -293,6 +293,7 @@ const Reservas = () => {
                       placeholderText="Selecciona una fecha"
                       popperClassName="react-datepicker-popper"
                       popperPlacement="bottom-start"
+                      calendarClassName="react-datepicker-calendar"
                     />
                   </div>
                 </div>
