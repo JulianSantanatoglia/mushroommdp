@@ -4,11 +4,11 @@
 
 @layer base {
   html {
-    @apply scroll-smooth;
+    scroll-behavior: smooth;
   }
   
   body {
-    @apply bg-gradient-to-b from-indigo-950 to-black text-white min-h-screen;
+    @apply bg-gradient-to-b from-indigo-950 to-slate-800 text-white;
   }
 }
 
@@ -22,15 +22,19 @@
   }
   
   .btn-primary {
-    @apply bg-blue-500 hover:bg-blue-600 text-white;
+    @apply px-6 py-2 bg-blue-500 text-white rounded-lg font-semibold hover:bg-blue-600 transition-all duration-300;
   }
   
   .btn-secondary {
-    @apply bg-slate-700 hover:bg-slate-600 text-gray-300;
+    @apply px-6 py-2 bg-white/20 text-white rounded-lg font-semibold hover:bg-white/30 transition-all duration-300;
   }
   
-  .input {
-    @apply w-full px-4 py-2 rounded-lg bg-slate-700 border border-slate-600 focus:border-blue-500 focus:outline-none;
+  .card {
+    @apply bg-white/10 backdrop-blur-lg rounded-xl p-6 border-2 border-transparent transition-all duration-300;
+  }
+  
+  .input-field {
+    @apply w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent;
   }
 }
 

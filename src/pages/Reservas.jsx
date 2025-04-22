@@ -22,34 +22,32 @@ const Reservas = () => {
 
   const booths = [
     {
-      id: 1,
-      name: 'Cabina Premium',
-      description: 'Cabina equipada con equipos de alta gama, ideal para grabaciones profesionales y sesiones de DJ avanzadas.',
-      price: 50,
+      id: 'premium',
+      name: 'Booth Premium',
+      description: 'Equipamiento completo para DJs profesionales',
+      price: 2500,
       features: [
-        'Pioneer DJM-900NXS2',
-        'CDJ-3000 x 2',
-        'Monitores KRK Rokit 8',
-        'Aislamiento acústico premium',
-        'Sistema de iluminación LED',
-        'Mesa de mezclas profesional'
+        'Equipamiento de alta gama',
+        'Sistema de sonido profesional',
+        'Controladores MIDI',
+        'Monitores de estudio',
+        'Aislamiento acústico premium'
       ],
-      image: '/images/cabina1.jpg'
+      image: '/images/booth-premium.jpg'
     },
     {
-      id: 2,
-      name: 'Cabina Estándar',
-      description: 'Cabina perfecta para practicar y sesiones de DJ principiantes o intermedios.',
-      price: 30,
+      id: 'standard',
+      name: 'Booth Standard',
+      description: 'Equipamiento básico para prácticas y grabaciones',
+      price: 1500,
       features: [
-        'Pioneer DJM-450',
-        'CDJ-2000NXS2 x 2',
-        'Monitores KRK Rokit 5',
-        'Aislamiento acústico estándar',
-        'Iluminación básica',
-        'Mesa de mezclas estándar'
+        'Equipamiento básico',
+        'Sistema de sonido estándar',
+        'Controladores básicos',
+        'Monitores de estudio',
+        'Aislamiento acústico estándar'
       ],
-      image: '/images/cabina2.jpg'
+      image: '/images/booth-standard.jpg'
     }
   ];
 
@@ -180,74 +178,58 @@ const Reservas = () => {
   };
 
   return (
-    <div className="reservas-container">
-      <div className="container mx-auto px-4">
-        <motion.h1 
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="reservas-title"
-        >
-          Reserva tu Cabina
-        </motion.h1>
+    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-slate-800 py-12 px-4 sm:px-6 lg:px-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="max-w-7xl mx-auto"
+      >
+        <h1 className="text-4xl font-bold text-white text-center mb-12">
+          Reserva tu Booth
+        </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-8 md:mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {booths.map((booth) => (
             <motion.div
               key={booth.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: booth.id * 0.2 }}
-              className={`booth-card ${
-                selectedBooth === booth.id ? 'booth-card-selected' : 'booth-card-default'
-              }`}
+              transition={{ duration: 0.5 }}
+              className={`bg-white/10 backdrop-blur-lg rounded-xl p-6 border-2 ${
+                selectedBooth === booth.id
+                  ? 'border-blue-500 shadow-lg shadow-blue-500/50'
+                  : 'border-transparent'
+              } transition-all duration-300`}
             >
-              <div className="booth-image-container">
+              <div className="relative h-64 mb-6 rounded-lg overflow-hidden">
                 <img
                   src={booth.image}
                   alt={booth.name}
-                  className="booth-image"
+                  className="w-full h-full object-cover"
                 />
-                <div className="booth-image-overlay" />
-                <div className="booth-info">
-                  <h3 className="booth-name">{booth.name}</h3>
-                  <p className="booth-price">${booth.price}/hora</p>
-                </div>
               </div>
-
-              <p className="booth-description">{booth.description}</p>
-
-              <div className="booth-features">
-                <h4 className="features-title">Características:</h4>
-                <ul className="features-list">
+              <h2 className="text-2xl font-bold text-white mb-4">{booth.name}</h2>
+              <p className="text-gray-300 mb-4">{booth.description}</p>
+              <div className="mb-4">
+                <h3 className="text-lg font-semibold text-white mb-2">Características:</h3>
+                <ul className="list-disc list-inside text-gray-300">
                   {booth.features.map((feature, index) => (
-                    <li key={index} className="feature-item">
-                      <svg
-                        className="feature-icon"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M5 13l4 4L19 7"
-                        />
-                      </svg>
-                      {feature}
-                    </li>
+                    <li key={index}>{feature}</li>
                   ))}
                 </ul>
               </div>
-
-              <div className="mt-auto">
+              <div className="flex justify-between items-center">
+                <span className="text-2xl font-bold text-white">${booth.price}/hora</span>
                 <button
                   onClick={() => handleBoothSelect(booth.id)}
-                  className={`booth-select-button ${
-                    selectedBooth === booth.id ? 'button-selected' : 'button-default'
+                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    selectedBooth === booth.id
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-white/20 text-white hover:bg-white/30'
                   }`}
                 >
-                  {selectedBooth === booth.id ? 'Seleccionada' : 'Seleccionar'}
+                  {selectedBooth === booth.id ? 'Seleccionado' : 'Seleccionar'}
                 </button>
               </div>
             </motion.div>
@@ -343,7 +325,7 @@ const Reservas = () => {
               <div className="reservation-details">
                 <div className="space-y-2">
                   <p className="detail-item">
-                    <span className="font-semibold">Cabina:</span> {booths.find(b => b.id === selectedBooth).name}
+                    <span className="font-semibold">Booth:</span> {booths.find(b => b.id === selectedBooth).name}
                   </p>
                   <p className="detail-item">
                     <span className="font-semibold">Fecha:</span> {selectedDate.toLocaleDateString()}
@@ -395,7 +377,7 @@ const Reservas = () => {
             </div>
           </motion.div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 };
