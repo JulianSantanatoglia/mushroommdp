@@ -34,7 +34,7 @@ const Reservas = () => {
         'Sistema de iluminación LED',
         'Mesa de mezclas profesional'
       ],
-      image: '/public/images/cabina1.jpg'
+      image: '/images/cabina1.jpg'
     },
     {
       id: 2,
@@ -49,7 +49,7 @@ const Reservas = () => {
         'Iluminación básica',
         'Mesa de mezclas estándar'
       ],
-      image: '/public/images/cabina2.jpg'
+      image: '/images/cabina2.jpg'
     }
   ];
 
