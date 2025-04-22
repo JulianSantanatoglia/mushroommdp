@@ -4,6 +4,7 @@ import { db } from '../firebase/config';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import '../styles/datepicker.css';
 
 const Reservas = () => {
   const [selectedBooth, setSelectedBooth] = useState(null);
@@ -280,16 +281,20 @@ const Reservas = () => {
             <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Selecciona Fecha y Hora</h2>
             <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="date-picker-container">
+                <div className="date-picker-container relative">
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Fecha</label>
-                  <DatePicker
-                    selected={selectedDate}
-                    onChange={handleDateSelect}
-                    minDate={new Date()}
-                    dateFormat="dd/MM/yyyy"
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholderText="Selecciona una fecha"
-                  />
+                  <div className="relative">
+                    <DatePicker
+                      selected={selectedDate}
+                      onChange={handleDateSelect}
+                      minDate={new Date()}
+                      dateFormat="dd/MM/yyyy"
+                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholderText="Selecciona una fecha"
+                      popperClassName="react-datepicker-popper"
+                      popperPlacement="bottom-start"
+                    />
+                  </div>
                 </div>
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Duración</label>
