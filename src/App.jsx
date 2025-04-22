@@ -9,6 +9,7 @@ import Servicios from './pages/Servicios';
 import Reservas from './pages/Reservas';
 import { AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
+import ScrollToTop from './components/ScrollToTop';
 
 function AppContent() {
   const location = useLocation();
@@ -36,6 +37,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
+        <ScrollToTop />
         <AppContent />
       </Router>
     </AuthProvider>

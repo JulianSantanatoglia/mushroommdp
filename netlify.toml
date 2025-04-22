@@ -5,9 +5,14 @@
 [build.environment]
   NODE_VERSION = "18"
   NPM_VERSION = "9"
+  NODE_ENV = "production"
+
+[build.processing]
+  skip_processing = true
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-[build.processing]
-  skip_processing = true 
+[build.processing.css]
+  bundle = true
+  minify = true 

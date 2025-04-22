@@ -19,6 +19,12 @@ export default {
       fontFamily: {
         sans: ['Inter', 'sans-serif'],
       },
+      spacing: {
+        '128': '32rem',
+      },
+      borderRadius: {
+        'xl': '1rem',
+      },
       container: {
         center: true,
         padding: '1rem',
