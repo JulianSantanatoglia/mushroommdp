@@ -14,12 +14,12 @@ const Gallery = () => {
   }, []);
 
   const images = [
-    { id: 1, src: "/public/images/imagen-1.jpg", alt: "Evento 1" },
-    { id: 2, src: "/public/images/imagen-2.jpg", alt: "Evento 2" },
-    { id: 3, src: "/public/images/imagen-3.jpg", alt: "Evento 3" },
-    { id: 4, src: "/public/images/imagen-4.jpg", alt: "Evento 4" },
-    { id: 5, src: "/public/images/imagen-5.jpg", alt: "Evento 5" },
-    { id: 6, src: "/public/images/imagen-6.jpg", alt: "Evento 6" },
+    { id: 1, src: "images/imagen-1.jpg", alt: "Evento 1" },
+    { id: 2, src: "images/imagen-2.jpg", alt: "Evento 2" },
+    { id: 3, src: "images/imagen-3.jpg", alt: "Evento 3" },
+    { id: 4, src: "images/imagen-4.jpg", alt: "Evento 4" },
+    { id: 5, src: "images/imagen-5.jpg", alt: "Evento 5" },
+    { id: 6, src: "images/imagen-6.jpg", alt: "Evento 6" },
   ];
 
   return (

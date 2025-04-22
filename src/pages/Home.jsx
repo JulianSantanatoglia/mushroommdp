@@ -51,7 +51,7 @@ const Home = () => {
         <div className="absolute inset-0 z-0">
           <div className="absolute inset-0 bg-black/70" />
           <img
-            src="/public/images/banner-2.jpg"
+            src="images/banner-2.jpg"
             alt="Banner de Mushroom-mdp"
             className="w-full h-full object-cover"
           />
