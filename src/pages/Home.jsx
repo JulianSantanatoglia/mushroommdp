@@ -158,7 +158,7 @@ const Home = () => {
             className="md:order-2 rounded-xl overflow-hidden shadow-xl"
           >
             <img
-              src="../../public/images/imagen-4.jpg"
+              src="images/imagen-4.jpg"
               alt="Nuestro Espacio y Servicios"
               className="w-full h-full object-cover"
               style={{ maxHeight: "500px" }}

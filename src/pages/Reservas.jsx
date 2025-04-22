@@ -114,6 +114,22 @@ const Reservas = () => {
     }
   };
 
+  const getSelectedTimeSlots = () => {
+    if (!selectedTime) return [];
+    
+    const slots = [];
+    const [startHour, startMinute] = selectedTime.split(':').map(Number);
+    const totalSlots = duration * 2; // Cada hora tiene 2 slots (0 y 30 minutos)
+    
+    for (let i = 0; i < totalSlots; i++) {
+      const hour = startHour + Math.floor(i / 2);
+      const minute = (i % 2) * 30;
+      slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+    }
+    
+    return slots;
+  };
+
   const handleBoothSelect = (boothId) => {
     setSelectedBooth(boothId);
     setSelectedDate(null);
@@ -179,7 +195,7 @@ const Reservas = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-black text-white py-20 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-black text-white py-20 px-4 mb-20">
       <div className="container mx-auto">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
@@ -299,19 +315,31 @@ const Reservas = () => {
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Hora</label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                    {availableTimes.map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => handleTimeSelect(time)}
-                        className={`py-2 rounded-lg transition-all duration-300 ${
-                          selectedTime === time
-                            ? 'bg-blue-500 hover:bg-blue-600'
-                            : 'bg-slate-700 hover:bg-slate-600'
-                        }`}
-                      >
-                        {time}
-                      </button>
-                    ))}
+                    {availableTimes.map((time) => {
+                      const selectedSlots = getSelectedTimeSlots();
+                      const isSelected = selectedSlots.includes(time);
+                      const isPartOfSelection = selectedSlots.some(slot => {
+                        const [slotHour, slotMinute] = slot.split(':').map(Number);
+                        const [timeHour, timeMinute] = time.split(':').map(Number);
+                        return slotHour === timeHour && Math.abs(slotMinute - timeMinute) <= 30;
+                      });
+
+                      return (
+                        <button
+                          key={time}
+                          onClick={() => handleTimeSelect(time)}
+                          className={`py-2 rounded-lg transition-all duration-300 ${
+                            isSelected
+                              ? 'bg-green-500 hover:bg-green-600'
+                              : isPartOfSelection
+                              ? 'bg-green-500/50 hover:bg-green-600/50'
+                              : 'bg-slate-700 hover:bg-slate-600'
+                          }`}
+                        >
+                          {time}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -323,7 +351,7 @@ const Reservas = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 md:p-6"
+            className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 md:p-6 max-w-2xl mx-auto"
           >
             <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Confirmar Reserva</h2>
             {error && (
@@ -331,62 +359,60 @@ const Reservas = () => {
                 {error}
               </div>
             )}
-            <div className="space-y-4 md:space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="space-y-2">
-                  <p className="text-gray-300">
-                    <span className="font-semibold">Cabina:</span> {booths.find(b => b.id === selectedBooth).name}
-                  </p>
-                  <p className="text-gray-300">
-                    <span className="font-semibold">Fecha:</span> {selectedDate.toLocaleDateString()}
-                  </p>
-                  <p className="text-gray-300">
-                    <span className="font-semibold">Hora:</span> {selectedTime}
-                  </p>
-                  <p className="text-gray-300">
-                    <span className="font-semibold">Duración:</span> {duration} {duration === 1 ? 'hora' : 'horas'}
-                  </p>
-                  <p className="text-gray-300">
-                    <span className="font-semibold">Total:</span> ${booths.find(b => b.id === selectedBooth).price * duration}
-                  </p>
-                </div>
-                <div className="space-y-4">
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleFormChange}
-                    placeholder="Nombre completo"
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleFormChange}
-                    placeholder="Correo electrónico"
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleFormChange}
-                    placeholder="Teléfono"
-                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="space-y-2">
+                <p className="text-gray-300">
+                  <span className="font-semibold">Cabina:</span> {booths.find(b => b.id === selectedBooth).name}
+                </p>
+                <p className="text-gray-300">
+                  <span className="font-semibold">Fecha:</span> {selectedDate.toLocaleDateString()}
+                </p>
+                <p className="text-gray-300">
+                  <span className="font-semibold">Hora:</span> {selectedTime}
+                </p>
+                <p className="text-gray-300">
+                  <span className="font-semibold">Duración:</span> {duration} {duration === 1 ? 'hora' : 'horas'}
+                </p>
+                <p className="text-gray-300">
+                  <span className="font-semibold">Total:</span> ${booths.find(b => b.id === selectedBooth).price * duration}
+                </p>
               </div>
-              <button
-                onClick={handleReservation}
-                disabled={loading}
-                className={`w-full py-3 rounded-lg bg-blue-500 hover:bg-blue-600 transition-all duration-300 ${
-                  loading ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-              >
-                {loading ? 'Procesando...' : 'Confirmar Reserva'}
-              </button>
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleFormChange}
+                  placeholder="Nombre completo"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleFormChange}
+                  placeholder="Correo electrónico"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleFormChange}
+                  placeholder="Teléfono"
+                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
+            <button
+              onClick={handleReservation}
+              disabled={loading}
+              className={`w-full mt-6 py-3 rounded-lg bg-blue-500 hover:bg-blue-600 transition-all duration-300 ${
+                loading ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+            >
+              {loading ? 'Procesando...' : 'Confirmar Reserva'}
+            </button>
           </motion.div>
         )}
       </div>
