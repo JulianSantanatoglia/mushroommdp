@@ -4,7 +4,6 @@ import { db } from '../firebase/config';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import './Reservas.css';
 
 const Reservas = () => {
   const [selectedBooth, setSelectedBooth] = useState(null);
@@ -180,12 +179,12 @@ const Reservas = () => {
   };
 
   return (
-    <div className="reservas-container">
-      <div className="container mx-auto px-4">
+    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-black text-white py-20 px-4">
+      <div className="container mx-auto">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="reservas-title"
+          className="text-3xl md:text-4xl lg:text-5xl font-bold text-center mb-8 md:mb-12"
         >
           Reserva tu Cabina
         </motion.h1>
@@ -197,32 +196,32 @@ const Reservas = () => {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: booth.id * 0.2 }}
-              className={`booth-card ${
-                selectedBooth === booth.id ? 'booth-card-selected' : 'booth-card-default'
+              className={`bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 md:p-6 border-2 transition-all duration-300 flex flex-col ${
+                selectedBooth === booth.id ? 'border-blue-500' : 'border-slate-700'
               }`}
             >
-              <div className="booth-image-container">
+              <div className="relative h-40 md:h-48 mb-4 md:mb-6 rounded-lg overflow-hidden">
                 <img
                   src={booth.image}
                   alt={booth.name}
-                  className="booth-image"
+                  className="w-full h-full object-cover"
                 />
-                <div className="booth-image-overlay" />
-                <div className="booth-info">
-                  <h3 className="booth-name">{booth.name}</h3>
-                  <p className="booth-price">${booth.price}/hora</p>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
+                <div className="absolute bottom-4 left-4">
+                  <h3 className="text-xl md:text-2xl font-bold">{booth.name}</h3>
+                  <p className="text-blue-400 font-semibold">${booth.price}/hora</p>
                 </div>
               </div>
 
-              <p className="booth-description">{booth.description}</p>
+              <p className="text-gray-300 mb-4 text-sm md:text-base">{booth.description}</p>
 
-              <div className="booth-features">
-                <h4 className="features-title">Características:</h4>
-                <ul className="features-list">
+              <div className="mb-4 md:mb-6">
+                <h4 className="text-lg md:text-xl font-semibold mb-2">Características:</h4>
+                <ul className="flex flex-col gap-1 md:gap-2">
                   {booth.features.map((feature, index) => (
-                    <li key={index} className="feature-item">
+                    <li key={index} className="flex items-center text-gray-300 text-sm md:text-base">
                       <svg
-                        className="feature-icon"
+                        className="w-4 h-4 md:w-5 md:h-5 text-blue-400 mr-2"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -243,8 +242,10 @@ const Reservas = () => {
               <div className="mt-auto">
                 <button
                   onClick={() => handleBoothSelect(booth.id)}
-                  className={`booth-select-button ${
-                    selectedBooth === booth.id ? 'button-selected' : 'button-default'
+                  className={`w-full py-2 md:py-3 rounded-lg transition-all duration-300 text-sm md:text-base ${
+                    selectedBooth === booth.id 
+                      ? 'bg-blue-500 hover:bg-blue-600' 
+                      : 'bg-slate-700 hover:bg-slate-600'
                   }`}
                 >
                   {selectedBooth === booth.id ? 'Seleccionada' : 'Seleccionar'}
@@ -258,9 +259,9 @@ const Reservas = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="date-time-section"
+            className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 md:p-6 mb-8"
           >
-            <h2 className="date-time-title">Selecciona Fecha y Hora</h2>
+            <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Selecciona Fecha y Hora</h2>
             <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="date-picker-container">
@@ -270,30 +271,21 @@ const Reservas = () => {
                     onChange={handleDateSelect}
                     minDate={new Date()}
                     dateFormat="dd/MM/yyyy"
-                    className="date-picker"
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholderText="Selecciona una fecha"
-                    popperPlacement="bottom-start"
-                    popperModifiers={[
-                      {
-                        name: "preventOverflow",
-                        options: {
-                          boundary: "viewport"
-                        }
-                      }
-                    ]}
                   />
                 </div>
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Duración</label>
-                  <div className="duration-buttons">
+                  <div className="flex flex-wrap gap-2">
                     {[1, 1.5, 2, 2.5, 3].map((hours) => (
                       <button
                         key={hours}
                         onClick={() => handleDurationChange(hours)}
-                        className={`duration-button ${
+                        className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                           duration === hours
-                            ? 'button-selected'
-                            : 'button-default'
+                            ? 'bg-blue-500 hover:bg-blue-600'
+                            : 'bg-slate-700 hover:bg-slate-600'
                         }`}
                       >
                         {hours} {hours === 1 ? 'hora' : 'horas'}
@@ -306,15 +298,15 @@ const Reservas = () => {
               {selectedDate && (
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Hora</label>
-                  <div className="time-grid">
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                     {availableTimes.map((time) => (
                       <button
                         key={time}
                         onClick={() => handleTimeSelect(time)}
-                        className={`time-button ${
+                        className={`py-2 rounded-lg transition-all duration-300 ${
                           selectedTime === time
-                            ? 'button-selected'
-                            : 'button-default'
+                            ? 'bg-blue-500 hover:bg-blue-600'
+                            : 'bg-slate-700 hover:bg-slate-600'
                         }`}
                       >
                         {time}
@@ -331,30 +323,30 @@ const Reservas = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="confirmation-section"
+            className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 md:p-6"
           >
-            <h2 className="confirmation-title">Confirmar Reserva</h2>
+            <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Confirmar Reserva</h2>
             {error && (
-              <div className="error-message">
+              <div className="bg-red-500/20 border border-red-500 text-red-300 px-4 py-3 rounded-lg mb-4">
                 {error}
               </div>
             )}
             <div className="space-y-4 md:space-y-6">
-              <div className="reservation-details">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                 <div className="space-y-2">
-                  <p className="detail-item">
+                  <p className="text-gray-300">
                     <span className="font-semibold">Cabina:</span> {booths.find(b => b.id === selectedBooth).name}
                   </p>
-                  <p className="detail-item">
+                  <p className="text-gray-300">
                     <span className="font-semibold">Fecha:</span> {selectedDate.toLocaleDateString()}
                   </p>
-                  <p className="detail-item">
+                  <p className="text-gray-300">
                     <span className="font-semibold">Hora:</span> {selectedTime}
                   </p>
-                  <p className="detail-item">
+                  <p className="text-gray-300">
                     <span className="font-semibold">Duración:</span> {duration} {duration === 1 ? 'hora' : 'horas'}
                   </p>
-                  <p className="detail-item">
+                  <p className="text-gray-300">
                     <span className="font-semibold">Total:</span> ${booths.find(b => b.id === selectedBooth).price * duration}
                   </p>
                 </div>
@@ -365,7 +357,7 @@ const Reservas = () => {
                     value={formData.name}
                     onChange={handleFormChange}
                     placeholder="Nombre completo"
-                    className="form-input"
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     type="email"
@@ -373,7 +365,7 @@ const Reservas = () => {
                     value={formData.email}
                     onChange={handleFormChange}
                     placeholder="Correo electrónico"
-                    className="form-input"
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <input
                     type="tel"
@@ -381,14 +373,16 @@ const Reservas = () => {
                     value={formData.phone}
                     onChange={handleFormChange}
                     placeholder="Teléfono"
-                    className="form-input"
+                    className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
               <button
                 onClick={handleReservation}
                 disabled={loading}
-                className={`confirm-button ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`w-full py-3 rounded-lg bg-blue-500 hover:bg-blue-600 transition-all duration-300 ${
+                  loading ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
               >
                 {loading ? 'Procesando...' : 'Confirmar Reserva'}
               </button>
