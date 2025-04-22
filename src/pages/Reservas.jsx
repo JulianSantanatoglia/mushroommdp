@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import FullCalendar from '@fullcalendar/react';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import interactionPlugin from '@fullcalendar/interaction';
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
-import './Reservas.css';
+import 'react-datepicker/dist/react-datepicker.css';
 
 const Reservas = () => {
   const [selectedBooth, setSelectedBooth] = useState(null);
@@ -14,180 +17,203 @@ const Reservas = () => {
   const [formData, setFormData] = useState({
     name: '',
     email: '',
-    phone: ''
+    phone: '',
   });
   const [availableTimes, setAvailableTimes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
   const booths = [
     {
       id: 'premium',
-      name: 'Booth Premium',
-      description: 'Equipamiento completo para DJs profesionales',
+      name: 'Cabina Premium',
+      description: 'Equipada con lo último en tecnología de audio y video',
       price: 2500,
       features: [
-        'Equipamiento de alta gama',
-        'Sistema de sonido profesional',
-        'Controladores MIDI',
+        'Equipo de audio profesional',
         'Monitores de estudio',
-        'Aislamiento acústico premium'
+        'Micrófonos de condensador',
+        'Interfaz de audio de alta calidad',
+        'Software de grabación profesional',
       ],
-      image: '/images/booth-premium.jpg'
+      image: '/images/booth-premium.jpg',
     },
     {
       id: 'standard',
-      name: 'Booth Standard',
-      description: 'Equipamiento básico para prácticas y grabaciones',
+      name: 'Cabina Standard',
+      description: 'Perfecta para prácticas y grabaciones básicas',
       price: 1500,
       features: [
-        'Equipamiento básico',
-        'Sistema de sonido estándar',
-        'Controladores básicos',
+        'Equipo de audio básico',
         'Monitores de estudio',
-        'Aislamiento acústico estándar'
+        'Micrófonos dinámicos',
+        'Interfaz de audio estándar',
+        'Software de grabación básico',
       ],
-      image: '/images/booth-standard.jpg'
-    }
+      image: '/images/booth-standard.jpg',
+    },
   ];
 
-  // Generar horarios disponibles
   const generateTimeSlots = () => {
     const slots = [];
-    const startTime = 9; // 9:00 AM
-    const endTime = 22; // 10:00 PM
-    
-    for (let hour = startTime; hour < endTime; hour++) {
-      slots.push(`${hour}:00`);
-      slots.push(`${hour}:30`);
+    const startHour = 9;
+    const endHour = 22;
+
+    for (let hour = startHour; hour < endHour; hour++) {
+      for (let minute = 0; minute < 60; minute += 30) {
+        const time = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        slots.push(time);
+      }
     }
-    
+
     return slots;
   };
 
-  // Verificar disponibilidad en Firebase
   const checkAvailability = async (date, time) => {
-    if (!selectedBooth || !date || !time) return;
-    
-    setLoading(true);
-    setError(null);
-    
     try {
       const startTime = new Date(date);
       const [hours, minutes] = time.split(':');
       startTime.setHours(parseInt(hours), parseInt(minutes), 0);
-      
+
       const endTime = new Date(startTime);
       endTime.setHours(endTime.getHours() + duration);
-      
+
       const reservationsRef = collection(db, 'reservations');
       const q = query(
         reservationsRef,
         where('boothId', '==', selectedBooth),
         where('startTime', '>=', startTime),
-        where('startTime', '<', endTime)
+        where('endTime', '<=', endTime)
       );
-      
+
       const querySnapshot = await getDocs(q);
       return querySnapshot.empty;
-    } catch (err) {
-      setError('Error al verificar disponibilidad');
-      console.error(err);
+    } catch (error) {
+      console.error('Error checking availability:', error);
       return false;
-    } finally {
-      setLoading(false);
     }
+  };
+
+  const handleBoothSelect = (booth) => {
+    setSelectedBooth(booth.id);
+    setSelectedDate(null);
+    setSelectedTime(null);
+    setFormData({
+      name: '',
+      email: '',
+      phone: '',
+    });
+    setError(null);
+    setSuccess(false);
   };
 
   const handleDateSelect = async (date) => {
     setSelectedDate(date);
     setSelectedTime(null);
-    setAvailableTimes(generateTimeSlots());
-  };
+    setError(null);
 
-  const handleTimeSelect = async (time) => {
-    setSelectedTime(time);
-    const isAvailable = await checkAvailability(selectedDate, time);
-    if (!isAvailable) {
-      setError('Este horario ya está reservado');
+    const slots = generateTimeSlots();
+    const availableSlots = [];
+
+    for (const slot of slots) {
+      const isAvailable = await checkAvailability(date, slot);
+      if (isAvailable) {
+        availableSlots.push(slot);
+      }
     }
+
+    setAvailableTimes(availableSlots);
   };
 
-  const handleBoothSelect = (boothId) => {
-    setSelectedBooth(boothId);
-    setSelectedDate(null);
-    setSelectedTime(null);
+  const handleTimeSelect = (time) => {
+    setSelectedTime(time);
+    setError(null);
   };
 
   const handleDurationChange = (hours) => {
     setDuration(hours);
     setSelectedTime(null);
+    setError(null);
   };
 
-  const handleFormChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  const handleReservation = async () => {
-    if (!selectedBooth || !selectedDate || !selectedTime || !formData.name || !formData.email || !formData.phone) {
-      setError('Por favor complete todos los campos');
-      return;
-    }
-
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
+      if (!selectedBooth || !selectedDate || !selectedTime) {
+        throw new Error('Por favor, complete todos los campos requeridos');
+      }
+
       const startTime = new Date(selectedDate);
       const [hours, minutes] = selectedTime.split(':');
       startTime.setHours(parseInt(hours), parseInt(minutes), 0);
-      
+
       const endTime = new Date(startTime);
       endTime.setHours(endTime.getHours() + duration);
 
-      const reservationData = {
+      const isAvailable = await checkAvailability(selectedDate, selectedTime);
+      if (!isAvailable) {
+        throw new Error('Lo sentimos, este horario ya no está disponible');
+      }
+
+      const booth = booths.find((b) => b.id === selectedBooth);
+      const totalPrice = booth.price * duration;
+
+      await addDoc(collection(db, 'reservations'), {
         boothId: selectedBooth,
         startTime,
         endTime,
         duration,
-        ...formData,
-        totalPrice: booths.find(b => b.id === selectedBooth).price * duration,
+        customerName: formData.name,
+        customerEmail: formData.email,
+        customerPhone: formData.phone,
+        totalPrice,
         status: 'pending',
-        createdAt: new Date()
-      };
+        createdAt: new Date(),
+      });
 
-      await addDoc(collection(db, 'reservations'), reservationData);
-      
-      // Limpiar el formulario
+      setSuccess(true);
+      setSelectedBooth(null);
       setSelectedDate(null);
       setSelectedTime(null);
-      setFormData({ name: '', email: '', phone: '' });
-      setError(null);
-      
-      // Mostrar mensaje de éxito
-      alert('Reserva realizada con éxito');
-    } catch (err) {
-      setError('Error al realizar la reserva');
-      console.error(err);
+      setDuration(1);
+      setFormData({
+        name: '',
+        email: '',
+        phone: '',
+      });
+    } catch (error) {
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-slate-800 py-12 px-4 sm:px-6 lg:px-8">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="max-w-7xl mx-auto"
-      >
-        <h1 className="text-4xl font-bold text-white text-center mb-12">
-          Reserva tu Booth
-        </h1>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      className="min-h-screen bg-gradient-to-b from-indigo-950 to-slate-800 py-12 px-4 sm:px-6 lg:px-8"
+    >
+      <div className="max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h1 className="text-4xl font-bold text-white mb-4">Reservas</h1>
+          <p className="text-lg text-gray-300">
+            Selecciona una cabina y elige tu horario preferido
+          </p>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
           {booths.map((booth) => (
@@ -195,42 +221,63 @@ const Reservas = () => {
               key={booth.id}
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-              className={`bg-white/10 backdrop-blur-lg rounded-xl p-6 border-2 ${
-                selectedBooth === booth.id
-                  ? 'border-blue-500 shadow-lg shadow-blue-500/50'
-                  : 'border-transparent'
-              } transition-all duration-300`}
+              transition={{ duration: 0.3 }}
+              className={`bg-white rounded-xl shadow-lg overflow-hidden ${
+                selectedBooth === booth.id ? 'ring-2 ring-blue-500' : ''
+              }`}
             >
-              <div className="relative h-64 mb-6 rounded-lg overflow-hidden">
+              <div className="relative h-48">
                 <img
                   src={booth.image}
                   alt={booth.name}
                   className="w-full h-full object-cover"
                 />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-4">
+                  <h2 className="text-2xl font-bold text-white">{booth.name}</h2>
+                  <p className="text-white/80">{booth.description}</p>
+                </div>
               </div>
-              <h2 className="text-2xl font-bold text-white mb-4">{booth.name}</h2>
-              <p className="text-gray-300 mb-4">{booth.description}</p>
-              <div className="mb-4">
-                <h3 className="text-lg font-semibold text-white mb-2">Características:</h3>
-                <ul className="list-disc list-inside text-gray-300">
-                  {booth.features.map((feature, index) => (
-                    <li key={index}>{feature}</li>
-                  ))}
-                </ul>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-2xl font-bold text-white">${booth.price}/hora</span>
-                <button
-                  onClick={() => handleBoothSelect(booth.id)}
-                  className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
-                    selectedBooth === booth.id
-                      ? 'bg-blue-500 text-white'
-                      : 'bg-white/20 text-white hover:bg-white/30'
-                  }`}
-                >
-                  {selectedBooth === booth.id ? 'Seleccionado' : 'Seleccionar'}
-                </button>
+              <div className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    Características
+                  </h3>
+                  <ul className="space-y-2">
+                    {booth.features.map((feature, index) => (
+                      <li key={index} className="flex items-center text-gray-600">
+                        <svg
+                          className="w-5 h-5 text-green-500 mr-2"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M5 13l4 4L19 7"
+                          />
+                        </svg>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-2xl font-bold text-gray-900">
+                      ${booth.price}
+                    </span>
+                    <span className="text-gray-500">/hora</span>
+                  </div>
+                  <button
+                    onClick={() => handleBoothSelect(booth)}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+                  >
+                    Seleccionar
+                  </button>
+                </div>
               </div>
             </motion.div>
           ))}
@@ -240,145 +287,175 @@ const Reservas = () => {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="date-time-section"
+            className="bg-white rounded-xl shadow-lg p-6 mb-8"
           >
-            <h2 className="date-time-title">Selecciona Fecha y Hora</h2>
-            <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="date-picker-container">
-                  <label className="block text-gray-300 mb-2 text-sm md:text-base">Fecha</label>
-                  <DatePicker
-                    selected={selectedDate}
-                    onChange={handleDateSelect}
-                    minDate={new Date()}
-                    dateFormat="dd/MM/yyyy"
-                    className="date-picker"
-                    placeholderText="Selecciona una fecha"
-                    popperPlacement="bottom-start"
-                    popperModifiers={[
-                      {
-                        name: "preventOverflow",
-                        options: {
-                          boundary: "viewport"
-                        }
-                      }
-                    ]}
-                  />
-                </div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Selecciona fecha y hora
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Fecha
+                </label>
+                <DatePicker
+                  selected={selectedDate}
+                  onChange={handleDateSelect}
+                  minDate={new Date()}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  placeholderText="Selecciona una fecha"
+                />
+              </div>
+              {selectedDate && (
                 <div>
-                  <label className="block text-gray-300 mb-2 text-sm md:text-base">Duración</label>
-                  <div className="duration-buttons">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Duración (horas)
+                  </label>
+                  <div className="flex space-x-2">
                     {[1, 1.5, 2, 2.5, 3].map((hours) => (
                       <button
                         key={hours}
                         onClick={() => handleDurationChange(hours)}
-                        className={`duration-button ${
+                        className={`px-4 py-2 rounded-lg ${
                           duration === hours
-                            ? 'button-selected'
-                            : 'button-default'
+                            ? 'bg-blue-500 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
-                        {hours} {hours === 1 ? 'hora' : 'horas'}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {selectedDate && (
-                <div>
-                  <label className="block text-gray-300 mb-2 text-sm md:text-base">Hora</label>
-                  <div className="time-grid">
-                    {availableTimes.map((time) => (
-                      <button
-                        key={time}
-                        onClick={() => handleTimeSelect(time)}
-                        className={`time-button ${
-                          selectedTime === time
-                            ? 'button-selected'
-                            : 'button-default'
-                        }`}
-                      >
-                        {time}
+                        {hours}h
                       </button>
                     ))}
                   </div>
                 </div>
               )}
             </div>
+            {selectedDate && availableTimes.length > 0 && (
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Horario disponible
+                </label>
+                <div className="grid grid-cols-4 gap-2">
+                  {availableTimes.map((time) => (
+                    <button
+                      key={time}
+                      onClick={() => handleTimeSelect(time)}
+                      className={`px-4 py-2 rounded-lg ${
+                        selectedTime === time
+                          ? 'bg-blue-500 text-white'
+                          : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
+                    >
+                      {time}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </motion.div>
         )}
 
-        {selectedDate && selectedTime && selectedBooth && (
+        {selectedBooth && selectedDate && selectedTime && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="confirmation-section"
+            className="bg-white rounded-xl shadow-lg p-6"
           >
-            <h2 className="confirmation-title">Confirmar Reserva</h2>
-            {error && (
-              <div className="error-message">
-                {error}
-              </div>
-            )}
-            <div className="space-y-4 md:space-y-6">
-              <div className="reservation-details">
-                <div className="space-y-2">
-                  <p className="detail-item">
-                    <span className="font-semibold">Booth:</span> {booths.find(b => b.id === selectedBooth).name}
-                  </p>
-                  <p className="detail-item">
-                    <span className="font-semibold">Fecha:</span> {selectedDate.toLocaleDateString()}
-                  </p>
-                  <p className="detail-item">
-                    <span className="font-semibold">Hora:</span> {selectedTime}
-                  </p>
-                  <p className="detail-item">
-                    <span className="font-semibold">Duración:</span> {duration} {duration === 1 ? 'hora' : 'horas'}
-                  </p>
-                  <p className="detail-item">
-                    <span className="font-semibold">Total:</span> ${booths.find(b => b.id === selectedBooth).price * duration}
-                  </p>
-                </div>
-                <div className="space-y-4">
+            <h2 className="text-2xl font-bold text-gray-900 mb-6">
+              Confirmar reserva
+            </h2>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nombre completo
+                  </label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
-                    onChange={handleFormChange}
-                    placeholder="Nombre completo"
-                    className="form-input"
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email
+                  </label>
                   <input
                     type="email"
                     name="email"
                     value={formData.email}
-                    onChange={handleFormChange}
-                    placeholder="Correo electrónico"
-                    className="form-input"
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Teléfono
+                  </label>
                   <input
                     type="tel"
                     name="phone"
                     value={formData.phone}
-                    onChange={handleFormChange}
-                    placeholder="Teléfono"
-                    className="form-input"
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
               </div>
+
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  Detalles de la reserva
+                </h3>
+                <div className="space-y-2">
+                  <p className="text-gray-600">
+                    <span className="font-medium">Cabina:</span>{' '}
+                    {booths.find((b) => b.id === selectedBooth)?.name}
+                  </p>
+                  <p className="text-gray-600">
+                    <span className="font-medium">Fecha:</span>{' '}
+                    {selectedDate?.toLocaleDateString()}
+                  </p>
+                  <p className="text-gray-600">
+                    <span className="font-medium">Hora:</span> {selectedTime}
+                  </p>
+                  <p className="text-gray-600">
+                    <span className="font-medium">Duración:</span> {duration} hora
+                    {duration > 1 ? 's' : ''}
+                  </p>
+                  <p className="text-gray-600">
+                    <span className="font-medium">Precio total:</span> $
+                    {booths.find((b) => b.id === selectedBooth)?.price * duration}
+                  </p>
+                </div>
+              </div>
+
+              {error && (
+                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+                  {error}
+                </div>
+              )}
+
+              {success && (
+                <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-lg">
+                  ¡Reserva confirmada! Te enviaremos un email con los detalles.
+                </div>
+              )}
+
               <button
-                onClick={handleReservation}
+                type="submit"
                 disabled={loading}
-                className={`confirm-button ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Procesando...' : 'Confirmar Reserva'}
+                {loading ? 'Procesando...' : 'Confirmar reserva'}
               </button>
-            </div>
+            </form>
           </motion.div>
         )}
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   );
 };
 

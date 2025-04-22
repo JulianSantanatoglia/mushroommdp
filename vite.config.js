@@ -14,13 +14,8 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: undefined,
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name.endsWith('.css')) {
-            return 'assets/[name].[ext]'
-          }
-          return 'assets/[name]-[hash].[ext]'
-        },
-        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name].[ext]',
+        entryFileNames: 'assets/[name].js',
       },
     },
     cssCodeSplit: true,
@@ -38,5 +33,4 @@ export default defineConfig({
     },
   },
   base: '/',
-  publicDir: 'public',
 })
