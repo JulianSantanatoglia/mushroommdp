@@ -1,0 +1,103 @@
+.react-datepicker {
+  font-family: inherit;
+  border: none;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  background-color: #1a1a1a;
+  color: #ffffff;
+}
+
+.react-datepicker__header {
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #333;
+  padding: 1rem;
+}
+
+.react-datepicker__current-month {
+  color: #ffffff;
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.react-datepicker__day-name {
+  color: #ffffff;
+  width: 2.5rem;
+  line-height: 2.5rem;
+  margin: 0.2rem;
+  font-weight: 500;
+}
+
+.react-datepicker__day {
+  color: #ffffff;
+  width: 2.5rem;
+  line-height: 2.5rem;
+  margin: 0.2rem;
+  border-radius: 0.25rem;
+}
+
+.react-datepicker__day:hover {
+  background-color: #333;
+}
+
+.react-datepicker__day--selected {
+  background-color: #4f46e5;
+  color: #ffffff;
+}
+
+.react-datepicker__day--keyboard-selected {
+  background-color: #4f46e5;
+  color: #ffffff;
+}
+
+.react-datepicker__day--disabled {
+  color: #666;
+}
+
+.react-datepicker__navigation {
+  top: 1rem;
+}
+
+.react-datepicker__navigation-icon::before {
+  border-color: #ffffff;
+}
+
+.react-datepicker__input-container input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #333;
+  border-radius: 0.5rem;
+  background-color: #1a1a1a;
+  color: #ffffff;
+  font-size: 1rem;
+}
+
+.react-datepicker__input-container input:focus {
+  outline: none;
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.2);
+}
+
+@media (max-width: 640px) {
+  .react-datepicker {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 90% !important;
+    max-width: 320px !important;
+    z-index: 50 !important;
+  }
+
+  .react-datepicker__day {
+    width: 2rem;
+    line-height: 2rem;
+    margin: 0.1rem;
+  }
+
+  .react-datepicker__day-name {
+    width: 2rem;
+    line-height: 2rem;
+    margin: 0.1rem;
+  }
+} 
