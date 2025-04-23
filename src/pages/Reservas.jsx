@@ -5,6 +5,9 @@ import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
 import '../styles/datepicker.css';
+import { registerLocale } from "react-datepicker";
+import es from 'date-fns/locale/es';
+registerLocale('es', es);
 
 const Reservas = () => {
   const [selectedBooth, setSelectedBooth] = useState(null);
@@ -197,7 +200,7 @@ const Reservas = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-black text-white py-20 px-4">
-      <div className="container mx-auto">
+      <div className="container mx-auto reservas-container pb-40">
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -281,7 +284,7 @@ const Reservas = () => {
             <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Selecciona Fecha y Hora</h2>
             <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="date-picker-container relative">
+                <div className="date-picker-container">
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Fecha</label>
                   <div className="relative">
                     <DatePicker
@@ -289,11 +292,35 @@ const Reservas = () => {
                       onChange={handleDateSelect}
                       minDate={new Date()}
                       dateFormat="dd/MM/yyyy"
+                      locale="es"
                       className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholderText="Selecciona una fecha"
-                      popperClassName="react-datepicker-popper"
                       popperPlacement="bottom-start"
+                      popperModifiers={[
+                        {
+                          name: "preventOverflow",
+                          options: {
+                            boundary: "viewport",
+                            altBoundary: true,
+                            padding: 8
+                          }
+                        },
+                        {
+                          name: "flip",
+                          options: {
+                            fallbackPlacements: ["top", "bottom"]
+                          }
+                        },
+                        {
+                          name: "offset",
+                          options: {
+                            offset: [0, 8]
+                          }
+                        }
+                      ]}
+                      showPopperArrow={false}
                       calendarClassName="react-datepicker-calendar"
+                      wrapperClassName="w-full"
                     />
                   </div>
                 </div>
