@@ -11,16 +11,13 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks: undefined,
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name.endsWith('.css')) {
-            return 'assets/[name].[ext]'
-          }
-          return 'assets/[name]-[hash].[ext]'
-        },
-        entryFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]'
       },
     },
     cssCodeSplit: true,
@@ -39,4 +36,8 @@ export default defineConfig({
   },
   base: '/',
   publicDir: 'public',
+  server: {
+    port: 3000,
+    open: true
+  }
 })
