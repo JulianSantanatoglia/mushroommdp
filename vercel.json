@@ -12,14 +12,6 @@
   ],
   "rewrites": [
     {
-      "source": "/assets/:path*",
-      "headers": {
-        "cache-control": "public, max-age=31536000, immutable",
-        "content-type": "application/javascript"
-      },
-      "destination": "/assets/:path*"
-    },
-    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
