@@ -4,7 +4,6 @@ import { db } from '../firebase/config';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
-import '../styles/datepicker.css';
 import { registerLocale } from "react-datepicker";
 import es from 'date-fns/locale/es';
 registerLocale('es', es);
@@ -284,7 +283,7 @@ const Reservas = () => {
             <h2 className="text-xl md:text-2xl font-bold mb-4 md:mb-6">Selecciona Fecha y Hora</h2>
             <div className="max-w-2xl mx-auto space-y-4 md:space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-                <div className="date-picker-container">
+                <div className="date-picker-container relative">
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Fecha</label>
                   <div className="relative">
                     <DatePicker
@@ -319,8 +318,17 @@ const Reservas = () => {
                         }
                       ]}
                       showPopperArrow={false}
-                      calendarClassName="react-datepicker-calendar"
+                      calendarClassName="bg-slate-800 border border-slate-700 rounded-lg shadow-lg"
                       wrapperClassName="w-full"
+                      dayClassName={() => "text-white hover:bg-blue-500 hover:text-white rounded-md transition-colors duration-200"}
+                      monthClassName={() => "bg-slate-800 text-white"}
+                      weekDayClassName={() => "text-slate-400"}
+                      headerClassName="bg-slate-900 border-b border-slate-700 rounded-t-lg"
+                      previousMonthButtonClassName="text-white hover:bg-slate-700 rounded-md transition-colors duration-200"
+                      nextMonthButtonClassName="text-white hover:bg-slate-700 rounded-md transition-colors duration-200"
+                      currentMonthClassName="text-white font-semibold"
+                      selectedDayClassName="bg-blue-500 text-white"
+                      disabledDayClassName="text-slate-600 cursor-not-allowed"
                     />
                   </div>
                 </div>
