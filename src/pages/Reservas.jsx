@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { db } from '../firebase/config';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import DatePicker from 'react-datepicker';
-import "react-datepicker/dist/react-datepicker.css";
+import '../styles/datepicker.css';
 import { registerLocale } from "react-datepicker";
 import es from 'date-fns/locale/es';
 registerLocale('es', es);
@@ -291,44 +291,64 @@ const Reservas = () => {
                       onChange={handleDateSelect}
                       minDate={new Date()}
                       dateFormat="dd/MM/yyyy"
-                      locale="es"
-                      className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholderText="Selecciona una fecha"
-                      popperPlacement="bottom-start"
+                      locale={es}
+                      className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
+                      placeholderText="Selecciona la fecha"
+                      calendarClassName="react-datepicker"
+                      wrapperClassName="w-full"
                       popperModifiers={[
                         {
                           name: "preventOverflow",
                           options: {
                             boundary: "viewport",
-                            altBoundary: true,
-                            padding: 8
-                          }
-                        },
-                        {
-                          name: "flip",
-                          options: {
-                            fallbackPlacements: ["top", "bottom"]
-                          }
+                            padding: 8,
+                          },
                         },
                         {
                           name: "offset",
                           options: {
-                            offset: [0, 8]
-                          }
-                        }
+                            offset: [0, 8],
+                          },
+                        },
                       ]}
-                      showPopperArrow={false}
-                      calendarClassName="bg-slate-800 border border-slate-700 rounded-lg shadow-lg"
-                      wrapperClassName="w-full"
-                      dayClassName={() => "text-white hover:bg-blue-500 hover:text-white rounded-md transition-colors duration-200"}
-                      monthClassName={() => "bg-slate-800 text-white"}
-                      weekDayClassName={() => "text-slate-400"}
-                      headerClassName="bg-slate-900 border-b border-slate-700 rounded-t-lg"
-                      previousMonthButtonClassName="text-white hover:bg-slate-700 rounded-md transition-colors duration-200"
-                      nextMonthButtonClassName="text-white hover:bg-slate-700 rounded-md transition-colors duration-200"
-                      currentMonthClassName="text-white font-semibold"
-                      selectedDayClassName="bg-blue-500 text-white"
-                      disabledDayClassName="text-slate-600 cursor-not-allowed"
+                      showPopperArrow={true}
+                      withPortal={window.innerWidth < 640}
+                      dropdownMode="select"
+                      previousMonthButtonLabel="<"
+                      nextMonthButtonLabel=">"
+                      renderCustomHeader={({
+                        date,
+                        decreaseMonth,
+                        increaseMonth,
+                        prevMonthButtonDisabled,
+                        nextMonthButtonDisabled,
+                      }) => (
+                        <div className="react-datepicker__header">
+                          <button
+                            onClick={decreaseMonth}
+                            disabled={prevMonthButtonDisabled}
+                            type="button"
+                            className="react-datepicker__navigation react-datepicker__navigation--previous"
+                          >
+                            <span className="react-datepicker__navigation-icon react-datepicker__navigation-icon--previous">
+                              {"<"}
+                            </span>
+                          </button>
+                          <span className="react-datepicker__current-month">
+                            {date.toLocaleString('es', { month: 'long', year: 'numeric' })}
+                          </span>
+                          <button
+                            onClick={increaseMonth}
+                            disabled={nextMonthButtonDisabled}
+                            type="button"
+                            className="react-datepicker__navigation react-datepicker__navigation--next"
+                          >
+                            <span className="react-datepicker__navigation-icon react-datepicker__navigation-icon--next">
+                              {">"}
+                            </span>
+                          </button>
+                        </div>
+                      )}
                     />
                   </div>
                 </div>
