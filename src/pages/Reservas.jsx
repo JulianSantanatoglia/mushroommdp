@@ -302,7 +302,7 @@ const Reservas = () => {
                           options: {
                             boundary: "viewport",
                             padding: 8,
-                          },
+                        },
                         },
                         {
                           name: "offset",

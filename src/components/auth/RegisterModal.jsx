@@ -83,7 +83,7 @@ const RegisterModal = () => {
           >
             <button
               onClick={closeModals}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors bg-transparent"
             >
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -175,7 +175,7 @@ const RegisterModal = () => {
                 <button
                   type="button"
                   onClick={openLoginModal}
-                  className="text-blue-400 hover:text-blue-300 transition-colors"
+                  className="text-blue-400 hover:text-blue-300 transition-colors bg-transparent"
                 >
                   Inicia sesión aquí
                 </button>
