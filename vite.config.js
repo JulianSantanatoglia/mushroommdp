@@ -38,7 +38,8 @@ export default defineConfig({
   publicDir: 'public',
   server: {
     port: 3000,
-    open: true
+    open: true,
+    host: true
   },
   optimizeDeps: {
     include: ['react', 'react-dom']
