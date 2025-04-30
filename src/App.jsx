@@ -7,9 +7,11 @@ import Gallery from './pages/Gallery';
 import Contact from './pages/Contact';
 import Servicios from './pages/Servicios';
 import Reservas from './pages/Reservas';
+import Sets from './pages/Sets';
 import { AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
+import WhatsAppButton from './components/WhatsAppButton';
 
 function AppContent() {
   const location = useLocation();
@@ -25,9 +27,11 @@ function AppContent() {
             <Route path="/galeria" element={<Gallery />} />
             <Route path="/contacto" element={<Contact />} />
             <Route path="/reservas" element={<Reservas />} />
+            <Route path="/sets" element={<Sets />} />
           </Routes>
         </main>
       </AnimatePresence>
+      <WhatsAppButton />
       <Footer />
     </div>
   );

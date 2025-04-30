@@ -113,12 +113,17 @@ const Home = () => {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.2 }}
-              className="p-8 rounded-xl shadow-lg bg-slate-900/50 backdrop-blur-sm border border-slate-800"
+              className="relative p-8 rounded-xl bg-slate-900/30 backdrop-blur-sm"
             >
-              <p className="text-4xl font-bold text-teal-400 mb-3">
-                {stat.number}
-              </p>
-              <p className="text-gray-400 text-lg">{stat.text}</p>
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400/20 to-indigo-400/20 blur-sm" />
+              <div className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-400/20 to-indigo-400/20 animate-pulse" />
+              <div className="absolute inset-0 rounded-xl border border-blue-400/30" />
+              <div className="relative z-10">
+                <p className="text-4xl font-bold text-blue-400 mb-3">
+                  {stat.number}
+                </p>
+                <p className="text-gray-300 text-lg">{stat.text}</p>
+              </div>
             </motion.div>
           ))}
         </div>
