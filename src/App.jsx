@@ -8,6 +8,8 @@ import Contact from './pages/Contact';
 import Servicios from './pages/Servicios';
 import Reservas from './pages/Reservas';
 import Sets from './pages/Sets';
+import Profile from './pages/Profile';
+import Admin from './pages/Admin';
 import { AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
@@ -28,6 +30,8 @@ function AppContent() {
             <Route path="/contacto" element={<Contact />} />
             <Route path="/reservas" element={<Reservas />} />
             <Route path="/sets" element={<Sets />} />
+            <Route path="/perfil" element={<Profile />} />
+            <Route path="/admin" element={<Admin />} />
           </Routes>
         </main>
       </AnimatePresence>

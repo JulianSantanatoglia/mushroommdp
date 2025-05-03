@@ -49,7 +49,7 @@ const Home = () => {
     <div className="min-h-screen w-full bg-gradient-to-b from-blue-900 to-black text-white">
       <section className="relative py-24 md:py-36 w-full overflow-hidden">
         <div className="absolute inset-0 z-0">
-          <div className="absolute inset-0 bg-black/70" />
+          <div className="absolute inset-0 bg-black/80" />
           <img
             src="images/banner-2.jpg"
             alt="Banner de Mushroom-mdp"
@@ -80,13 +80,17 @@ const Home = () => {
             transition={{ duration: 0.6 }}
             className="text-5xl md:text-7xl font-bold text-white mb-4"
           >
-            Mushroom mdp
+            <img 
+              src="images/logomorado.png" 
+              alt="Mushroom Mdp Logo" 
+              className="h-40 md:h-56 mx-auto mb-1 opacity-75"
+            />
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-xl md:text-2xl text-gray-300 mb-8"
+            className="text-xl md:text-2xl text-gray-300 font-light tracking-wider mt-1"
           >
             Sonido para tu evento, espacio para tu música.
           </motion.p>
@@ -94,12 +98,13 @@ const Home = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
+            className="mt-8"
           >
             <a
-              href="/contacto"
+              href="/reservas"
               className="inline-block bg-transparent border-2 border-blue-300 hover:bg-blue-300 hover:border-blue-300 focus:ring-2 focus:ring-blue-200 focus:ring-opacity-50 text-blue-300 hover:text-white font-medium py-3 px-6 rounded-md shadow-md transition-colors duration-300"
             >
-              Pedir presupuesto
+              RESERVA TU CABINA
             </a>
           </motion.div>
         </div>
@@ -219,7 +224,7 @@ const Home = () => {
                     {plan.price}
                   </p>
                   <a
-                    href="/contacto"
+                    href={plan.title === "Alquiler de Equipos" ? "/contacto" : "/sets"}
                     className="inline-block bg-transparent border-2 border-teal-400 hover:bg-teal-400 hover:border-teal-400 focus:ring-2 focus:ring-teal-300 focus:ring-opacity-50 text-teal-400 hover:text-white font-medium py-2 px-4 rounded-md shadow-sm transition-colors duration-300"
                   >
                     Pedir presupuesto

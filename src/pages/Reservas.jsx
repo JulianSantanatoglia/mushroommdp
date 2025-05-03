@@ -6,9 +6,12 @@ import DatePicker from 'react-datepicker';
 import '../styles/datepicker.css';
 import { registerLocale } from "react-datepicker";
 import es from 'date-fns/locale/es';
+import { useAuth } from '../context/AuthContext';
+import { initializeBooths } from '../firebase/init';
 registerLocale('es', es);
 
 const Reservas = () => {
+  const { user, openLoginModal } = useAuth();
   const [selectedBooth, setSelectedBooth] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -21,6 +24,19 @@ const Reservas = () => {
   const [availableTimes, setAvailableTimes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [timeSlots, setTimeSlots] = useState([]);
+  const [selectedSlots, setSelectedSlots] = useState([]);
+  const [isInitializing, setIsInitializing] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        phone: user.phone
+      });
+    }
+  }, [user]);
 
   const booths = [
     {
@@ -106,31 +122,60 @@ const Reservas = () => {
   const handleDateSelect = async (date) => {
     setSelectedDate(date);
     setSelectedTime(null);
-    setAvailableTimes(generateTimeSlots());
-  };
-
-  const handleTimeSelect = async (time) => {
-    setSelectedTime(time);
-    const isAvailable = await checkAvailability(selectedDate, time);
-    if (!isAvailable) {
-      setError('Este horario ya está reservado');
+    setSelectedSlots([]);
+    setLoading(true);
+    
+    if (selectedBooth) {
+      try {
+        console.log('Fetching slots for booth:', selectedBooth, 'date:', date);
+        const slots = await getAvailableTimeSlots(selectedBooth, date);
+        console.log('Received slots:', slots);
+        setTimeSlots(slots);
+      } catch (error) {
+        console.error('Error loading time slots:', error);
+        setError('Error al cargar los horarios disponibles: ' + error.message);
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
-  const getSelectedTimeSlots = () => {
-    if (!selectedTime) return [];
-    
-    const slots = [];
-    const [startHour, startMinute] = selectedTime.split(':').map(Number);
-    const totalSlots = duration * 2; // Cada hora tiene 2 slots (0 y 30 minutos)
-    
-    for (let i = 0; i < totalSlots; i++) {
-      const hour = startHour + Math.floor(i / 2);
-      const minute = (i % 2) * 30;
-      slots.push(`${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`);
+  const handleTimeSelect = (slot) => {
+    if (!slot.isAvailable) return;
+
+    const slotIndex = timeSlots.findIndex(s => s.timeString === slot.timeString);
+    const slotsToSelect = [];
+
+    // Calcular cuántos slots necesitamos seleccionar basado en la duración
+    const slotsNeeded = duration * 2; // 2 slots por hora (30 minutos cada uno)
+
+    // Verificar si hay suficientes slots disponibles
+    let canSelect = true;
+    for (let i = 0; i < slotsNeeded; i++) {
+      if (slotIndex + i >= timeSlots.length || !timeSlots[slotIndex + i].isAvailable) {
+        canSelect = false;
+        break;
+      }
     }
-    
-    return slots;
+
+    if (canSelect) {
+      // Seleccionar los slots necesarios
+      for (let i = 0; i < slotsNeeded; i++) {
+        slotsToSelect.push(timeSlots[slotIndex + i].timeString);
+      }
+      setSelectedSlots(slotsToSelect);
+      setSelectedTime(slot.timeString);
+    }
+  };
+
+  const getSlotClassName = (slot) => {
+    if (!slot.isAvailable) {
+      return 'bg-red-500/20 text-red-300 border-red-500 cursor-not-allowed';
+    }
+    if (selectedSlots.includes(slot.timeString)) {
+      return 'bg-green-500/20 text-green-300 border-green-500';
+    }
+    return 'bg-slate-700/50 text-gray-300 border-slate-600 hover:bg-slate-700';
   };
 
   const handleBoothSelect = (boothId) => {
@@ -152,7 +197,12 @@ const Reservas = () => {
   };
 
   const handleReservation = async () => {
-    if (!selectedBooth || !selectedDate || !selectedTime || !formData.name || !formData.email || !formData.phone) {
+    if (!user) {
+      openLoginModal();
+      return;
+    }
+
+    if (!selectedBooth || !selectedDate || !selectedTime) {
       setError('Por favor complete todos los campos');
       return;
     }
@@ -164,42 +214,67 @@ const Reservas = () => {
       const startTime = new Date(selectedDate);
       const [hours, minutes] = selectedTime.split(':');
       startTime.setHours(parseInt(hours), parseInt(minutes), 0);
-      
-      const endTime = new Date(startTime);
-      endTime.setHours(endTime.getHours() + duration);
+
+      console.log('Creating reservation with:', {
+        boothId: selectedBooth,
+        userId: user.uid,
+        startTime,
+        duration
+      });
 
       const reservationData = {
         boothId: selectedBooth,
+        userId: user.uid,
         startTime,
-        endTime,
-        duration,
-        ...formData,
-        totalPrice: booths.find(b => b.id === selectedBooth).price * duration,
-        status: 'pending',
-        createdAt: new Date()
+        duration
       };
 
-      await addDoc(collection(db, 'reservations'), reservationData);
+      const result = await createReservation(reservationData);
+      console.log('Reservation created:', result);
       
-      // Limpiar el formulario
       setSelectedDate(null);
       setSelectedTime(null);
-      setFormData({ name: '', email: '', phone: '' });
+      setSelectedSlots([]);
       setError(null);
       
-      // Mostrar mensaje de éxito
       alert('Reserva realizada con éxito');
     } catch (err) {
-      setError('Error al realizar la reserva');
-      console.error(err);
+      console.error('Error creating reservation:', err);
+      setError('Error al realizar la reserva: ' + err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleInitializeBooths = async () => {
+    setIsInitializing(true);
+    try {
+      await initializeBooths();
+      alert('Cabinas inicializadas correctamente');
+    } catch (error) {
+      console.error('Error initializing booths:', error);
+      alert('Error al inicializar las cabinas: ' + error.message);
+    } finally {
+      setIsInitializing(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-indigo-950 to-black text-white py-20 px-4">
       <div className="container mx-auto reservas-container pb-40">
+        {/* Botón de inicialización - solo visible para admins */}
+        {user && user.role === 'admin' && (
+          <div className="mb-8">
+            <button
+              onClick={handleInitializeBooths}
+              disabled={isInitializing}
+              className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-all duration-300"
+            >
+              {isInitializing ? 'Inicializando...' : 'Inicializar Cabinas'}
+            </button>
+          </div>
+        )}
+
         <motion.h1 
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -260,7 +335,13 @@ const Reservas = () => {
 
               <div className="mt-auto">
                 <button
-                  onClick={() => handleBoothSelect(booth.id)}
+                  onClick={() => {
+                    if (!user) {
+                      openLoginModal();
+                      return;
+                    }
+                    setSelectedBooth(booth.id);
+                  }}
                   className={`w-full py-2 md:py-3 rounded-lg transition-all duration-300 text-sm md:text-base ${
                     selectedBooth === booth.id 
                       ? 'bg-blue-500 hover:bg-blue-600' 
@@ -296,69 +377,16 @@ const Reservas = () => {
                       placeholderText="Selecciona la fecha"
                       calendarClassName="react-datepicker"
                       wrapperClassName="w-full"
-                      popperModifiers={[
-                        {
-                          name: "preventOverflow",
-                          options: {
-                            boundary: "viewport",
-                            padding: 8,
-                        },
-                        },
-                        {
-                          name: "offset",
-                          options: {
-                            offset: [0, 8],
-                          },
-                        },
-                      ]}
-                      showPopperArrow={true}
-                      withPortal={window.innerWidth < 640}
-                      dropdownMode="select"
-                      previousMonthButtonLabel="<"
-                      nextMonthButtonLabel=">"
-                      renderCustomHeader={({
-                        date,
-                        decreaseMonth,
-                        increaseMonth,
-                        prevMonthButtonDisabled,
-                        nextMonthButtonDisabled,
-                      }) => (
-                        <div className="react-datepicker__header">
-                          <button
-                            onClick={decreaseMonth}
-                            disabled={prevMonthButtonDisabled}
-                            type="button"
-                            className="react-datepicker__navigation react-datepicker__navigation--previous"
-                          >
-                            <span className="react-datepicker__navigation-icon react-datepicker__navigation-icon--previous">
-                              {"<"}
-                            </span>
-                          </button>
-                          <span className="react-datepicker__current-month">
-                            {date.toLocaleString('es', { month: 'long', year: 'numeric' })}
-                          </span>
-                          <button
-                            onClick={increaseMonth}
-                            disabled={nextMonthButtonDisabled}
-                            type="button"
-                            className="react-datepicker__navigation react-datepicker__navigation--next"
-                          >
-                            <span className="react-datepicker__navigation-icon react-datepicker__navigation-icon--next">
-                              {">"}
-                            </span>
-                          </button>
-                        </div>
-                      )}
                     />
                   </div>
                 </div>
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Duración</label>
                   <div className="flex flex-wrap gap-2">
-                    {[1, 1.5, 2, 2.5, 3].map((hours) => (
+                    {[1, 2, 3, 4].map((hours) => (
                       <button
                         key={hours}
-                        onClick={() => handleDurationChange(hours)}
+                        onClick={() => setDuration(hours)}
                         className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                           duration === hours
                             ? 'bg-blue-500 hover:bg-blue-600'
@@ -376,31 +404,26 @@ const Reservas = () => {
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Hora</label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                    {availableTimes.map((time) => {
-                      const selectedSlots = getSelectedTimeSlots();
-                      const isSelected = selectedSlots.includes(time);
-                      const isPartOfSelection = selectedSlots.some(slot => {
-                        const [slotHour, slotMinute] = slot.split(':').map(Number);
-                        const [timeHour, timeMinute] = time.split(':').map(Number);
-                        return slotHour === timeHour && Math.abs(slotMinute - timeMinute) <= 30;
-                      });
-
-                      return (
+                    {loading ? (
+                      <p className="text-gray-400 col-span-full text-center py-4">
+                        Cargando horarios disponibles...
+                      </p>
+                    ) : timeSlots && timeSlots.length > 0 ? (
+                      timeSlots.map((slot) => (
                         <button
-                          key={time}
-                          onClick={() => handleTimeSelect(time)}
-                          className={`py-2 rounded-lg transition-all duration-300 ${
-                            isSelected
-                              ? 'bg-green-500 hover:bg-green-600'
-                              : isPartOfSelection
-                              ? 'bg-green-500/50 hover:bg-green-600/50'
-                              : 'bg-slate-700 hover:bg-slate-600'
-                          }`}
+                          key={slot.id}
+                          onClick={() => handleTimeSelect(slot)}
+                          className={`py-2 rounded-lg transition-all duration-300 border ${getSlotClassName(slot)}`}
+                          disabled={!slot.isAvailable}
                         >
-                          {time}
+                          {slot.timeString}
                         </button>
-                      );
-                    })}
+                      ))
+                    ) : (
+                      <p className="text-gray-400 col-span-full text-center py-4">
+                        No hay horarios disponibles para esta fecha
+                      </p>
+                    )}
                   </div>
                 </div>
               )}
@@ -408,7 +431,7 @@ const Reservas = () => {
           </motion.div>
         )}
 
-        {selectedDate && selectedTime && selectedBooth && (
+        {selectedDate && selectedTime && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -420,50 +443,22 @@ const Reservas = () => {
                 {error}
               </div>
             )}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="space-y-2">
-                <p className="text-gray-300">
-                  <span className="font-semibold">Cabina:</span> {booths.find(b => b.id === selectedBooth).name}
-                </p>
-                <p className="text-gray-300">
-                  <span className="font-semibold">Fecha:</span> {selectedDate.toLocaleDateString()}
-                </p>
-                <p className="text-gray-300">
-                  <span className="font-semibold">Hora:</span> {selectedTime}
-                </p>
-                <p className="text-gray-300">
-                  <span className="font-semibold">Duración:</span> {duration} {duration === 1 ? 'hora' : 'horas'}
-                </p>
-                <p className="text-gray-300">
-                  <span className="font-semibold">Total:</span> ${booths.find(b => b.id === selectedBooth).price * duration}
-                </p>
-              </div>
-              <div className="space-y-4">
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleFormChange}
-                  placeholder="Nombre completo"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleFormChange}
-                  placeholder="Correo electrónico"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleFormChange}
-                  placeholder="Teléfono"
-                  className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
+            <div className="space-y-2">
+              <p className="text-gray-300">
+                <span className="font-semibold">Cabina:</span> {booths.find(b => b.id === selectedBooth).name}
+              </p>
+              <p className="text-gray-300">
+                <span className="font-semibold">Fecha:</span> {selectedDate.toLocaleDateString()}
+              </p>
+              <p className="text-gray-300">
+                <span className="font-semibold">Hora:</span> {selectedTime}
+              </p>
+              <p className="text-gray-300">
+                <span className="font-semibold">Duración:</span> {duration} {duration === 1 ? 'hora' : 'horas'}
+              </p>
+              <p className="text-gray-300">
+                <span className="font-semibold">Total:</span> ${booths.find(b => b.id === selectedBooth).price * duration}
+              </p>
             </div>
             <button
               onClick={handleReservation}

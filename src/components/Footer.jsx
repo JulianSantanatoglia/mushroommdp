@@ -14,21 +14,20 @@ const Footer = () => {
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
             viewport={{ once: true }}
-            className="text-center md:text-center"
+            className="text-center md:text-center flex flex-col items-center"
           >
-            <div className="flex flex-col items-center justify-center md:justify-center mb-4">
+            <div className="flex flex-col items-center justify-center md:justify-center">
               <img
-                src={logoImage}
+                src="images/logomorado.png"
                 alt="Logo Mushroom Mdp"
-                className="w-auto h-20 md:h-24 mb-2"
+                className="w-auto h-16 md:h-20 mb-1"
               />
-              <h3 className="text-white font-bold text-xl">mushroom-mdp</h3>
+              <p className="text-gray-300">
+                Sonido profesional para tus eventos. Calidad y experiencia a tu
+                servicio.
+              </p>
             </div>
-            <p className="text-gray-300 mb-4">
-              Sonido profesional para tus eventos. Calidad y experiencia a tu
-              servicio.
-            </p>
-            <div className="flex space-x-4 justify-center md:justify-center">
+            <div className="flex space-x-4 justify-center md:justify-center mt-4">
               <a
                 href="https://www.youtube.com/@maxiperetti"
                 target="_blank"
