@@ -31,13 +31,13 @@ if (missingVars.length > 0) {
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyDmktH8xjHMVDUicz9nvVvs2obzrQcHMbs",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "mushroom-62e3c.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "mushroom-62e3c",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "mushroom-62e3c.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "779002576435",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:779002576435:web:055b0e61ce9d4dc96e6d46",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-LPN1ZZZ945"
 };
 
 // Initialize Firebase

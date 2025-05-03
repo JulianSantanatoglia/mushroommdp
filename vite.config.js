@@ -45,6 +45,7 @@ export default defineConfig({
     include: ['react', 'react-dom']
   },
   define: {
-    'process.env': process.env
+    'process.env': {},
+    'import.meta.env': JSON.stringify(process.env)
   }
 })
