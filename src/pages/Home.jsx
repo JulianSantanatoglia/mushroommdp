@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   const stats = [
@@ -100,12 +101,12 @@ const Home = () => {
             transition={{ duration: 0.6, delay: 0.4 }}
             className="mt-8"
           >
-            <a
-              href="/reservas"
+            <Link
+              to="/reservas"
               className="inline-block bg-transparent border-2 border-blue-300 hover:bg-blue-300 hover:border-blue-300 focus:ring-2 focus:ring-blue-200 focus:ring-opacity-50 text-blue-300 hover:text-white font-medium py-3 px-6 rounded-md shadow-md transition-colors duration-300"
             >
               RESERVA TU CABINA
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>
