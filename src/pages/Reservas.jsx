@@ -377,6 +377,25 @@ const Reservas = () => {
                       placeholderText="Selecciona la fecha"
                       calendarClassName="react-datepicker"
                       wrapperClassName="w-full"
+                      popperClassName="react-datepicker-popper"
+                      popperModifiers={[
+                        {
+                          name: "preventOverflow",
+                          options: {
+                            enabled: true,
+                            escapeWithReference: false,
+                            boundary: "viewport"
+                          }
+                        },
+                        {
+                          name: "offset",
+                          options: {
+                            offset: [0, 8]
+                          }
+                        }
+                      ]}
+                      popperPlacement="bottom-start"
+                      shouldCloseOnSelect={true}
                     />
                   </div>
                 </div>
