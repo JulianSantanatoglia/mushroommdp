@@ -133,13 +133,13 @@ const Navbar = () => {
                   <>
                     <button
                       onClick={openLoginModal}
-                      className="text-gray-300 hover:text-white transition-colors"
+                      className="px-4 py-2 rounded-lg bg-slate-800/50 hover:bg-slate-700/50 text-gray-300 hover:text-white transition-all duration-300 border border-slate-700 shadow-lg shadow-slate-900/20"
                     >
                       Iniciar sesión
                     </button>
                     <button
                       onClick={openRegisterModal}
-                      className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors duration-300"
+                      className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white transition-all duration-300 shadow-lg shadow-blue-500/20"
                     >
                       Registrarse
                     </button>
@@ -289,16 +289,16 @@ const Navbar = () => {
                             openLoginModal();
                             setIsOpen(false);
                           }}
-                          className="w-full px-4 py-3 text-white rounded-lg text-center bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all duration-300"
+                          className="w-full px-4 py-3 text-white rounded-lg text-center bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700 transition-all duration-300 shadow-lg shadow-slate-900/20"
                         >
-                          Iniciar Sesión
+                          Iniciar sesión
                         </button>
                         <button
                           onClick={() => {
                             openRegisterModal();
                             setIsOpen(false);
                           }}
-                          className="w-full mt-2 px-4 py-3 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-center transition-all duration-300 shadow-lg shadow-blue-500/20"
+                          className="w-full mt-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg text-center transition-all duration-300 shadow-lg shadow-blue-500/20"
                         >
                           Registrarse
                         </button>

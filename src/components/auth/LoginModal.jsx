@@ -6,16 +6,55 @@ const LoginModal = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({
+    email: '',
+    password: ''
+  });
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
   const { login, loginWithGoogle, resetPassword, isLoginModalOpen, closeModals, openRegisterModal } = useAuth();
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) return 'El correo electrónico es requerido';
+    if (!emailRegex.test(email)) return 'Ingresa un correo electrónico válido (ejemplo@dominio.com)';
+    return '';
+  };
+
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setValidationErrors(prev => ({
+      ...prev,
+      email: validateEmail(newEmail)
+    }));
+  };
+
+  const handleResetEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setResetEmail(newEmail);
+    setValidationErrors(prev => ({
+      ...prev,
+      email: validateEmail(newEmail)
+    }));
+  };
 
   if (!isLoginModalOpen) return null;
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError('');
+
+    const emailError = validateEmail(email);
+    if (emailError) {
+      setValidationErrors(prev => ({
+        ...prev,
+        email: emailError
+      }));
+      return;
+    }
+
     try {
       await login(email, password);
     } catch (error) {
@@ -50,6 +89,16 @@ const LoginModal = () => {
   const handleResetPassword = async (e) => {
     e.preventDefault();
     setError('');
+
+    const emailError = validateEmail(resetEmail);
+    if (emailError) {
+      setValidationErrors(prev => ({
+        ...prev,
+        email: emailError
+      }));
+      return;
+    }
+
     try {
       await resetPassword(resetEmail);
       setResetSent(true);
@@ -101,10 +150,15 @@ const LoginModal = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:border-blue-500 focus:outline-none text-white"
+                  onChange={handleEmailChange}
+                  className={`w-full px-4 py-2 rounded-lg bg-slate-800 border ${
+                    validationErrors.email ? 'border-red-500' : 'border-slate-700'
+                  } focus:border-blue-500 focus:outline-none text-white`}
                   required
                 />
+                {validationErrors.email && (
+                  <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                )}
               </div>
               <div>
                 <label className="block text-gray-300 mb-2">Contraseña</label>
@@ -118,7 +172,7 @@ const LoginModal = () => {
               </div>
               <button
                 type="submit"
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-lg shadow-blue-500/20"
               >
                 Iniciar Sesión
               </button>
@@ -194,10 +248,15 @@ const LoginModal = () => {
                   <input
                     type="email"
                     value={resetEmail}
-                    onChange={(e) => setResetEmail(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:border-blue-500 focus:outline-none text-white"
+                    onChange={handleResetEmailChange}
+                    className={`w-full px-4 py-2 rounded-lg bg-slate-800 border ${
+                      validationErrors.email ? 'border-red-500' : 'border-slate-700'
+                    } focus:border-blue-500 focus:outline-none text-white`}
                     required
                   />
+                  {validationErrors.email && (
+                    <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div className="flex justify-between space-x-4">
                   <button
@@ -213,7 +272,7 @@ const LoginModal = () => {
                   </button>
                   <button
                     type="submit"
-                    className="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300"
+                    className="w-1/2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-lg shadow-blue-500/20"
                   >
                     Enviar correo
                   </button>

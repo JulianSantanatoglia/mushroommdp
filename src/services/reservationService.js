@@ -9,39 +9,37 @@ import {
   doc, 
   updateDoc,
   setDoc,
-  getDoc
+  getDoc,
+  deleteDoc
 } from 'firebase/firestore';
 
 // Función para inicializar los horarios disponibles
 export const initializeTimeSlots = async (boothId, date) => {
   try {
-    console.log('Initializing time slots for booth:', boothId, 'date:', date);
     const workingHours = { start: 9, end: 21 }; // 9 AM a 9 PM
-    const slotDuration = 30; // minutos
+    const slotDuration = 60; // 1 hora por defecto
 
     for (let hour = workingHours.start; hour <= workingHours.end; hour++) {
-      for (let minute = 0; minute < 60; minute += slotDuration) {
-        const slotStart = new Date(date);
-        slotStart.setHours(hour, minute, 0, 0);
+      const slotStart = new Date(date);
+      slotStart.setHours(hour, 0, 0, 0);
 
-        const slotEnd = new Date(slotStart);
-        slotEnd.setMinutes(slotEnd.getMinutes() + slotDuration);
+      const slotEnd = new Date(slotStart);
+      slotEnd.setHours(slotEnd.getHours() + 1);
 
-        const slotId = `${boothId}_${date.toISOString().split('T')[0]}_${hour.toString().padStart(2, '0')}${minute.toString().padStart(2, '0')}`;
-        
-        // Verificar si el slot ya existe
-        const slotDoc = await getDoc(doc(db, 'timeSlots', slotId));
-        if (!slotDoc.exists()) {
-          await setDoc(doc(db, 'timeSlots', slotId), {
-            boothId,
-            date: Timestamp.fromDate(date),
-            startTime: Timestamp.fromDate(slotStart),
-            endTime: Timestamp.fromDate(slotEnd),
-            isAvailable: true,
-            timeString: `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`
-          });
-          console.log('Created slot:', slotId);
-        }
+      const slotId = `${boothId}_${date.toISOString().split('T')[0]}_${hour.toString().padStart(2, '0')}00`;
+      
+      // Verificar si el slot ya existe
+      const slotDoc = await getDoc(doc(db, 'timeSlots', slotId));
+      if (!slotDoc.exists()) {
+        await setDoc(doc(db, 'timeSlots', slotId), {
+          boothId,
+          date: Timestamp.fromDate(date),
+          startTime: Timestamp.fromDate(slotStart),
+          endTime: Timestamp.fromDate(slotEnd),
+          isAvailable: true,
+          timeString: `${hour.toString().padStart(2, '0')}:00`,
+          duration: 1 // duración en horas
+        });
       }
     }
   } catch (error) {
@@ -51,9 +49,8 @@ export const initializeTimeSlots = async (boothId, date) => {
 };
 
 // Obtener horarios disponibles
-export const getAvailableTimeSlots = async (boothId, date) => {
+export const getAvailableTimeSlots = async (boothId, date, duration = 1) => {
   try {
-    console.log('Getting slots for booth:', boothId, 'date:', date);
     const startOfDay = new Date(date);
     startOfDay.setHours(0, 0, 0, 0);
     
@@ -69,12 +66,10 @@ export const getAvailableTimeSlots = async (boothId, date) => {
     );
 
     const slotsSnapshot = await getDocs(slotsQuery);
-    console.log('Found slots:', slotsSnapshot.size);
     
     if (slotsSnapshot.empty) {
-      console.log('No slots found, initializing...');
       await initializeTimeSlots(boothId, date);
-      return getAvailableTimeSlots(boothId, date); // Recursivamente obtener los slots
+      return getAvailableTimeSlots(boothId, date, duration);
     }
 
     const slots = slotsSnapshot.docs.map(doc => ({
@@ -82,85 +77,85 @@ export const getAvailableTimeSlots = async (boothId, date) => {
       ...doc.data()
     }));
 
-    console.log('Returning slots:', slots);
-    return slots;
+    // Filtrar slots disponibles considerando la duración
+    const availableSlots = [];
+    for (let i = 0; i < slots.length; i++) {
+      let isAvailable = true;
+      // Verificar si hay suficientes slots consecutivos disponibles
+      for (let j = 0; j < duration; j++) {
+        const nextSlot = slots[i + j];
+        if (!nextSlot || !nextSlot.isAvailable) {
+          isAvailable = false;
+          break;
+        }
+      }
+      if (isAvailable) {
+        availableSlots.push({
+          ...slots[i],
+          duration
+        });
+      }
+    }
+
+    return availableSlots;
   } catch (error) {
     console.error('Error getting available time slots:', error);
     throw error;
   }
 };
 
-// Crear una reserva
+// Crear una nueva reserva
 export const createReservation = async (reservationData) => {
   try {
-    console.log('Creating reservation with data:', reservationData);
-    const { boothId, userId, startTime, duration } = reservationData;
+    const { boothId, date, timeSlot, duration } = reservationData;
     
-    // Calcular el tiempo de fin
-    const endTime = new Date(startTime);
-    endTime.setHours(endTime.getHours() + duration);
-
-    // Obtener el precio de la cabina
-    const boothDoc = await getDoc(doc(db, 'booths', boothId.toString()));
-    if (!boothDoc.exists()) {
-      throw new Error('Booth not found');
+    // Verificar disponibilidad para la duración completa
+    const startHour = parseInt(timeSlot.split(':')[0]);
+    const slotsToCheck = [];
+    
+    for (let i = 0; i < duration; i++) {
+      const slotId = `${boothId}_${date.toISOString().split('T')[0]}_${(startHour + i).toString().padStart(2, '0')}00`;
+      slotsToCheck.push(slotId);
     }
-    const boothData = boothDoc.data();
-    const totalPrice = boothData.price * duration;
+
+    // Verificar que todos los slots estén disponibles
+    for (const slotId of slotsToCheck) {
+      const slotDoc = await getDoc(doc(db, 'timeSlots', slotId));
+      if (!slotDoc.exists() || !slotDoc.data().isAvailable) {
+        throw new Error('El horario seleccionado no está disponible');
+      }
+    }
 
     // Crear la reserva
-    const reservation = {
-      boothId,
-      userId,
-      startTime: Timestamp.fromDate(new Date(startTime)),
-      endTime: Timestamp.fromDate(endTime),
-      duration,
-      status: 'pending',
-      totalPrice,
+    const reservationsRef = collection(db, 'reservations');
+    const newReservation = {
+      ...reservationData,
       createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now()
+      status: 'active',
+      totalPrice: 50 * duration // precio por hora * duración
     };
-
-    console.log('Adding reservation to Firestore');
-    const docRef = await addDoc(collection(db, 'reservations'), reservation);
-    console.log('Reservation created with ID:', docRef.id);
+    const docRef = await addDoc(reservationsRef, newReservation);
 
     // Marcar los slots como no disponibles
-    const slotDuration = 30; // minutos
-    const slotsToUpdate = [];
-    
-    for (let i = 0; i < duration * 2; i++) {
-      const slotTime = new Date(startTime);
-      slotTime.setMinutes(slotTime.getMinutes() + (i * slotDuration));
-      
-      const slotId = `${boothId}_${slotTime.toISOString().split('T')[0]}_${slotTime.getHours().toString().padStart(2, '0')}${slotTime.getMinutes().toString().padStart(2, '0')}`;
-      slotsToUpdate.push(slotId);
-    }
-
-    // Actualizar los slots
-    console.log('Updating slots:', slotsToUpdate);
-    for (const slotId of slotsToUpdate) {
+    for (const slotId of slotsToCheck) {
       await updateDoc(doc(db, 'timeSlots', slotId), {
         isAvailable: false,
         reservationId: docRef.id
       });
     }
 
-    return { id: docRef.id, ...reservation };
+    return docRef.id;
   } catch (error) {
     console.error('Error creating reservation:', error);
     throw error;
   }
 };
 
-// Obtener reservas de un usuario
+// Obtener reservas por usuario
 export const getUserReservations = async (userId) => {
   try {
-    const q = query(
-      collection(db, 'reservations'),
-      where('userId', '==', userId)
-    );
-
+    const reservationsRef = collection(db, 'reservations');
+    const q = query(reservationsRef, where('userId', '==', userId));
     const querySnapshot = await getDocs(q);
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
@@ -172,43 +167,82 @@ export const getUserReservations = async (userId) => {
   }
 };
 
+// Obtener todas las reservas (para admin)
+export const getAllReservations = async () => {
+  try {
+    const reservationsRef = collection(db, 'reservations');
+    const querySnapshot = await getDocs(reservationsRef);
+    return querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error('Error getting all reservations:', error);
+    throw error;
+  }
+};
+
+// Actualizar una reserva
+export const updateReservation = async (reservationId, updateData) => {
+  try {
+    const reservationRef = doc(db, 'reservations', reservationId);
+    await updateDoc(reservationRef, updateData);
+    return true;
+  } catch (error) {
+    console.error('Error updating reservation:', error);
+    throw error;
+  }
+};
+
 // Cancelar una reserva
 export const cancelReservation = async (reservationId) => {
   try {
-    // Obtener la reserva
-    const reservationDoc = await getDoc(doc(db, 'reservations', reservationId));
+    const reservationRef = doc(db, 'reservations', reservationId);
+    const reservationDoc = await getDoc(reservationRef);
+    
     if (!reservationDoc.exists()) {
-      throw new Error('Reservation not found');
+      throw new Error('Reserva no encontrada');
     }
-    const reservation = reservationDoc.data();
 
+    const reservation = reservationDoc.data();
+    
     // Marcar la reserva como cancelada
-    await updateDoc(doc(db, 'reservations', reservationId), {
+    await updateDoc(reservationRef, {
       status: 'cancelled',
-      updatedAt: Timestamp.now()
+      cancelledAt: Timestamp.now()
     });
 
-    // Marcar los slots como disponibles nuevamente
-    const slotDuration = 30; // minutos
-    const slotsToUpdate = [];
-    
-    for (let i = 0; i < reservation.duration * 2; i++) {
-      const slotTime = reservation.startTime.toDate();
-      slotTime.setMinutes(slotTime.getMinutes() + (i * slotDuration));
-      
-      const slotId = `${reservation.boothId}_${slotTime.toISOString().split('T')[0]}_${slotTime.getHours().toString().padStart(2, '0')}${slotTime.getMinutes().toString().padStart(2, '0')}`;
-      slotsToUpdate.push(slotId);
-    }
-
-    // Actualizar los slots
-    for (const slotId of slotsToUpdate) {
+    // Liberar los slots de tiempo
+    const startHour = parseInt(reservation.timeSlot.split(':')[0]);
+    for (let i = 0; i < reservation.duration; i++) {
+      const slotId = `${reservation.boothId}_${reservation.date.toDate().toISOString().split('T')[0]}_${(startHour + i).toString().padStart(2, '0')}00`;
       await updateDoc(doc(db, 'timeSlots', slotId), {
         isAvailable: true,
         reservationId: null
       });
     }
+
+    return true;
   } catch (error) {
     console.error('Error cancelling reservation:', error);
+    throw error;
+  }
+};
+
+// Verificar disponibilidad de horarios
+export const checkTimeSlotAvailability = async (date, boothId) => {
+  try {
+    const reservationsRef = collection(db, 'reservations');
+    const q = query(
+      reservationsRef,
+      where('date', '==', date),
+      where('boothId', '==', boothId),
+      where('status', '==', 'active')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map(doc => doc.data().timeSlot);
+  } catch (error) {
+    console.error('Error checking time slot availability:', error);
     throw error;
   }
 }; 

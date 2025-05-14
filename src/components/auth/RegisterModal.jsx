@@ -10,7 +10,56 @@ const RegisterModal = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [validationErrors, setValidationErrors] = useState({
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
   const { signup, isRegisterModalOpen, closeModals, openLoginModal } = useAuth();
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) return 'El correo electrónico es requerido';
+    if (!emailRegex.test(email)) return 'Ingresa un correo electrónico válido (ejemplo@dominio.com)';
+    return '';
+  };
+
+  const validatePassword = (password) => {
+    const validations = {
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      number: /[0-9]/.test(password)
+    };
+    return validations;
+  };
+
+  const handleEmailChange = (e) => {
+    const newEmail = e.target.value;
+    setEmail(newEmail);
+    setValidationErrors(prev => ({
+      ...prev,
+      email: validateEmail(newEmail)
+    }));
+  };
+
+  const handlePasswordChange = (e) => {
+    const newPassword = e.target.value;
+    setPassword(newPassword);
+    const passwordValidations = validatePassword(newPassword);
+    setValidationErrors(prev => ({
+      ...prev,
+      password: passwordValidations
+    }));
+  };
+
+  const handleConfirmPasswordChange = (e) => {
+    const newConfirmPassword = e.target.value;
+    setConfirmPassword(newConfirmPassword);
+    setValidationErrors(prev => ({
+      ...prev,
+      confirmPassword: newConfirmPassword !== password ? 'Las contraseñas no coinciden' : ''
+    }));
+  };
 
   if (!isRegisterModalOpen) return null;
 
@@ -18,8 +67,16 @@ const RegisterModal = () => {
     e.preventDefault();
     setError('');
 
-    if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+    const emailError = validateEmail(email);
+    const passwordValidations = validatePassword(password);
+    const confirmPasswordError = confirmPassword !== password ? 'Las contraseñas no coinciden' : '';
+
+    if (emailError || !Object.values(passwordValidations).every(Boolean) || confirmPasswordError) {
+      setValidationErrors({
+        email: emailError,
+        password: passwordValidations,
+        confirmPassword: confirmPasswordError
+      });
       return;
     }
 
@@ -105,10 +162,15 @@ const RegisterModal = () => {
             <input
               type="email"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:border-blue-500 focus:outline-none text-white"
+              onChange={handleEmailChange}
+              className={`w-full px-4 py-2 rounded-lg bg-slate-800 border ${
+                validationErrors.email ? 'border-red-500' : 'border-slate-700'
+              } focus:border-blue-500 focus:outline-none text-white`}
               required
             />
+            {validationErrors.email && (
+              <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
+            )}
           </div>
           <div>
             <label className="block text-gray-300 mb-2">Teléfono</label>
@@ -125,20 +187,77 @@ const RegisterModal = () => {
             <input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:border-blue-500 focus:outline-none text-white"
+              onChange={handlePasswordChange}
+              className={`w-full px-4 py-2 rounded-lg bg-slate-800 border ${
+                Object.values(validationErrors.password || {}).some(v => !v) ? 'border-red-500' : 'border-slate-700'
+              } focus:border-blue-500 focus:outline-none text-white`}
               required
             />
+            <div className="mt-2 space-y-1">
+              <div className="flex items-center space-x-2">
+                {validationErrors.password?.length ? (
+                  <svg className={`w-4 h-4 ${validationErrors.password.length ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {validationErrors.password.length ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    )}
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                <span className="text-sm text-gray-400">Al menos 8 caracteres</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {validationErrors.password?.uppercase !== undefined ? (
+                  <svg className={`w-4 h-4 ${validationErrors.password.uppercase ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {validationErrors.password.uppercase ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    )}
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                <span className="text-sm text-gray-400">Al menos una letra mayúscula</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                {validationErrors.password?.number !== undefined ? (
+                  <svg className={`w-4 h-4 ${validationErrors.password.number ? 'text-green-500' : 'text-red-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    {validationErrors.password.number ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    )}
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                <span className="text-sm text-gray-400">Al menos un número</span>
+              </div>
+            </div>
           </div>
           <div>
             <label className="block text-gray-300 mb-2">Confirmar Contraseña</label>
             <input
               type="password"
               value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:border-blue-500 focus:outline-none text-white"
+              onChange={handleConfirmPasswordChange}
+              className={`w-full px-4 py-2 rounded-lg bg-slate-800 border ${
+                validationErrors.confirmPassword ? 'border-red-500' : 'border-slate-700'
+              } focus:border-blue-500 focus:outline-none text-white`}
               required
             />
+            {validationErrors.confirmPassword && (
+              <p className="text-red-500 text-sm mt-1">{validationErrors.confirmPassword}</p>
+            )}
           </div>
           <div className="flex justify-between space-x-4">
             <button
@@ -153,7 +272,7 @@ const RegisterModal = () => {
             </button>
             <button
               type="submit"
-              className="w-1/2 bg-blue-500 hover:bg-blue-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-300"
+              className="w-1/2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-lg shadow-blue-500/20"
             >
               Registrarse
             </button>
