@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase/config';
 import { collection, addDoc, query, where, getDocs } from 'firebase/firestore';
 import DatePicker from 'react-datepicker';
@@ -8,9 +9,11 @@ import { registerLocale } from "react-datepicker";
 import es from 'date-fns/locale/es';
 import { useAuth } from '../context/AuthContext';
 import { initializeBooths } from '../firebase/init';
+import * as reservationService from '../services/reservationService';
 registerLocale('es', es);
 
 const Reservas = () => {
+  const navigate = useNavigate();
   const { user, openLoginModal } = useAuth();
   const [selectedBooth, setSelectedBooth] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -27,6 +30,13 @@ const Reservas = () => {
   const [timeSlots, setTimeSlots] = useState([]);
   const [selectedSlots, setSelectedSlots] = useState([]);
   const [isInitializing, setIsInitializing] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [reservationDetails, setReservationDetails] = useState(null);
+
+  // Calcular fechas mínima y máxima
+  const minDate = new Date();
+  const maxDate = new Date();
+  maxDate.setMonth(maxDate.getMonth() + 1);
 
   useEffect(() => {
     if (user) {
@@ -124,16 +134,22 @@ const Reservas = () => {
     setSelectedTime(null);
     setSelectedSlots([]);
     setLoading(true);
+    setError(null);
     
     if (selectedBooth) {
       try {
-        console.log('Fetching slots for booth:', selectedBooth, 'date:', date);
-        const slots = await getAvailableTimeSlots(selectedBooth, date);
-        console.log('Received slots:', slots);
+        console.log('Cargando slots para cabina:', selectedBooth, 'fecha:', date);
+        const slots = await reservationService.getAvailableTimeSlots(selectedBooth, date, duration);
+        console.log('Slots disponibles:', slots);
+        
+        if (slots.length === 0) {
+          setError('No hay horarios disponibles para esta fecha');
+        }
+        
         setTimeSlots(slots);
       } catch (error) {
-        console.error('Error loading time slots:', error);
-        setError('Error al cargar los horarios disponibles: ' + error.message);
+        console.error('Error al cargar los horarios:', error);
+        setError(error.message || 'Error al cargar los horarios disponibles');
       } finally {
         setLoading(false);
       }
@@ -187,6 +203,12 @@ const Reservas = () => {
   const handleDurationChange = (hours) => {
     setDuration(hours);
     setSelectedTime(null);
+    setSelectedSlots([]);
+    
+    // Recargar los slots con la nueva duración
+    if (selectedDate) {
+      handleDateSelect(selectedDate);
+    }
   };
 
   const handleFormChange = (e) => {
@@ -215,13 +237,6 @@ const Reservas = () => {
       const [hours, minutes] = selectedTime.split(':');
       startTime.setHours(parseInt(hours), parseInt(minutes), 0);
 
-      console.log('Creating reservation with:', {
-        boothId: selectedBooth,
-        userId: user.uid,
-        startTime,
-        duration
-      });
-
       const reservationData = {
         boothId: selectedBooth,
         userId: user.uid,
@@ -229,21 +244,35 @@ const Reservas = () => {
         duration
       };
 
-      const result = await createReservation(reservationData);
+      const result = await reservationService.createReservation(reservationData);
       console.log('Reservation created:', result);
       
+      // Guardar detalles de la reserva para el modal
+      setReservationDetails({
+        boothName: booths.find(b => b.id === selectedBooth).name,
+        date: selectedDate.toLocaleDateString(),
+        time: selectedTime,
+        duration,
+        totalPrice: booths.find(b => b.id === selectedBooth).price * duration
+      });
+      
+      setShowSuccessModal(true);
+      
+      // Limpiar el formulario
       setSelectedDate(null);
       setSelectedTime(null);
       setSelectedSlots([]);
       setError(null);
-      
-      alert('Reserva realizada con éxito');
     } catch (err) {
       console.error('Error creating reservation:', err);
       setError('Error al realizar la reserva: ' + err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewReservations = () => {
+    navigate('/perfil/reservas');
   };
 
   const handleInitializeBooths = async () => {
@@ -370,12 +399,13 @@ const Reservas = () => {
                     <DatePicker
                       selected={selectedDate}
                       onChange={handleDateSelect}
-                      minDate={new Date()}
+                      minDate={minDate}
+                      maxDate={maxDate}
                       dateFormat="dd/MM/yyyy"
                       locale={es}
                       className="w-full px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                       placeholderText="Selecciona la fecha"
-                      calendarClassName="react-datepicker"
+                      calendarClassName="react-datepicker-custom"
                       wrapperClassName="w-full"
                       popperClassName="react-datepicker-popper"
                       popperModifiers={[
@@ -402,10 +432,10 @@ const Reservas = () => {
                 <div>
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Duración</label>
                   <div className="flex flex-wrap gap-2">
-                    {[1, 2, 3, 4].map((hours) => (
+                    {[1, 2, 3].map((hours) => (
                       <button
                         key={hours}
-                        onClick={() => setDuration(hours)}
+                        onClick={() => handleDurationChange(hours)}
                         className={`px-4 py-2 rounded-lg transition-all duration-300 ${
                           duration === hours
                             ? 'bg-blue-500 hover:bg-blue-600'
@@ -424,9 +454,17 @@ const Reservas = () => {
                   <label className="block text-gray-300 mb-2 text-sm md:text-base">Hora</label>
                   <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                     {loading ? (
-                      <p className="text-gray-400 col-span-full text-center py-4">
-                        Cargando horarios disponibles...
-                      </p>
+                      <div className="col-span-full text-center py-4">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                        <p className="text-gray-400">Cargando horarios disponibles...</p>
+                      </div>
+                    ) : error ? (
+                      <div className="col-span-full text-center py-4">
+                        <p className="text-red-400">{error}</p>
+                        {error.includes('índices necesarios') && (
+                          <p className="text-gray-400 mt-2">Por favor, espera unos minutos y vuelve a intentarlo.</p>
+                        )}
+                      </div>
                     ) : timeSlots && timeSlots.length > 0 ? (
                       timeSlots.map((slot) => (
                         <button
@@ -491,6 +529,39 @@ const Reservas = () => {
           </motion.div>
         )}
       </div>
+
+      {/* Modal de éxito */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-slate-800 rounded-xl p-6 max-w-md w-full mx-4"
+          >
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <h3 className="text-xl font-bold mb-2">¡Reserva Exitosa!</h3>
+              <div className="text-gray-300 mb-4">
+                <p>Cabina: {reservationDetails.boothName}</p>
+                <p>Fecha: {reservationDetails.date}</p>
+                <p>Hora: {reservationDetails.time}</p>
+                <p>Duración: {reservationDetails.duration} {reservationDetails.duration === 1 ? 'hora' : 'horas'}</p>
+                <p className="text-green-400 font-semibold mt-2">Total: ${reservationDetails.totalPrice}</p>
+              </div>
+              <button
+                onClick={handleViewReservations}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-lg transition-all duration-300"
+              >
+                Ver mis reservas
+              </button>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 };

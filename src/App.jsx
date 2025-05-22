@@ -14,6 +14,7 @@ import { AnimatePresence } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import ScrollToTop from './components/ScrollToTop';
 import WhatsAppButton from './components/WhatsAppButton';
+import UserReservations from './pages/UserReservations';
 
 function AppContent() {
   const location = useLocation();
@@ -29,6 +30,7 @@ function AppContent() {
             <Route path="/galeria" element={<Gallery />} />
             <Route path="/contacto" element={<Contact />} />
             <Route path="/reservas" element={<Reservas />} />
+            <Route path="/mis-reservas" element={<UserReservations />} />
             <Route path="/sets" element={<Sets />} />
             <Route path="/perfil" element={<Profile />} />
             <Route path="/admin" element={<Admin />} />
