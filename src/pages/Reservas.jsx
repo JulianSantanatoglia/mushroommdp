@@ -532,20 +532,20 @@ const Reservas = () => {
                           disabled={!slot.isAvailable}
                           className={`py-2 rounded-lg transition-all duration-300 border ${
                             !slot.isAvailable 
-                              ? 'bg-red-900/90 text-red-200 border-2 border-red-500 cursor-not-allowed opacity-75' 
+                              ? 'bg-red-500/20 text-red-300 border-red-500/50 cursor-not-allowed' 
                               : selectedSlots.includes(slot.timeString)
                                 ? 'bg-green-500/20 text-green-300 border-green-500'
                                 : 'bg-slate-700/50 text-gray-300 border-slate-600 hover:bg-slate-700 hover:border-blue-500'
                           }`}
                         >
                           <div className="relative flex items-center justify-center">
-                            <span className={`${!slot.isAvailable ? 'line-through opacity-50' : ''}`}>
+                            <span className={`${!slot.isAvailable ? 'line-through opacity-75' : ''}`}>
                               {slot.timeString}
                             </span>
                             {!slot.isAvailable && (
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                 </svg>
                               </div>
                             )}

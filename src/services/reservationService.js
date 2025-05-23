@@ -139,7 +139,42 @@ export const getAvailableTimeSlots = async (boothId, date, duration = 1) => {
     // Primero inicializamos los slots para esta fecha si no existen
     await initializeTimeSlots(boothId, date);
 
-    // Luego consultamos los slots usando una consulta más simple
+    // Consultar las reservas activas para esta fecha y cabina
+    const reservationsQuery = query(
+      collection(db, 'reservations'),
+      where('boothId', '==', Number(boothId)),
+      where('status', '==', 'active')
+    );
+
+    const reservationsSnapshot = await getDocs(reservationsQuery);
+    const activeReservations = reservationsSnapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(reservation => {
+        const reservationDate = reservation.startTime.toDate();
+        return reservationDate >= startOfDay && reservationDate < endOfDay;
+      });
+
+    console.log('Reservas activas encontradas:', activeReservations.length);
+
+    // Crear un mapa de slots ocupados
+    const occupiedSlots = new Set();
+    activeReservations.forEach(reservation => {
+      const startTime = reservation.startTime.toDate();
+      const duration = reservation.duration;
+      
+      // Marcar todos los slots que ocupa esta reserva
+      for (let i = 0; i < duration * 2; i++) { // 2 slots por hora
+        const slotTime = new Date(startTime);
+        slotTime.setMinutes(slotTime.getMinutes() + (i * 30));
+        const slotId = `${boothId}_${dateStr}_${slotTime.getHours().toString().padStart(2, '0')}${slotTime.getMinutes().toString().padStart(2, '0')}`;
+        occupiedSlots.add(slotId);
+      }
+    });
+
+    // Consultar todos los slots para esta fecha y cabina
     const slotsQuery = query(
       collection(db, 'timeSlots'),
       where('boothId', '==', boothId),
@@ -152,7 +187,8 @@ export const getAvailableTimeSlots = async (boothId, date, duration = 1) => {
 
     let slots = slotsSnapshot.docs.map(doc => ({
       id: doc.id,
-      ...doc.data()
+      ...doc.data(),
+      isAvailable: !occupiedSlots.has(doc.id) // Marcar como no disponible si está en occupiedSlots
     }));
 
     // Filtrar slots pasados si la fecha es hoy
