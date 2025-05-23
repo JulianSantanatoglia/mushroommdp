@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { db } from '../firebase/config';
 import { doc, getDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { updatePassword, EmailAuthProvider, reauthenticateWithCredential } from 'firebase/auth';
+import * as reservationService from '../services/reservationService';
 
 const Profile = () => {
   const { user, logout } = useAuth();
@@ -109,6 +110,23 @@ const Profile = () => {
       setError('Error al actualizar la contraseña');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleCancelReservation = async (reservationId) => {
+    if (window.confirm('¿Estás seguro de que deseas cancelar esta reserva?')) {
+      try {
+        setLoading(true);
+        setError(null);
+        await reservationService.cancelReservation(reservationId);
+        await loadReservations();
+        setSuccess('Reserva cancelada correctamente');
+      } catch (error) {
+        console.error('Error cancelling reservation:', error);
+        setError('Error al cancelar la reserva');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 
@@ -293,24 +311,37 @@ const Profile = () => {
                     >
                       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                         <div>
-                          <h3 className="font-semibold">Cabina {reservation.boothId}</h3>
+                          <h3 className="font-semibold">Cabina {reservation.boothId === 1 ? 'Premium' : 'Estándar'}</h3>
                           <p className="text-sm text-gray-400">
                             {new Date(reservation.startTime.toDate()).toLocaleDateString()} -{' '}
-                            {new Date(reservation.startTime.toDate()).toLocaleTimeString()}
+                            {new Date(reservation.startTime.toDate()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </p>
+                          <p className="text-sm text-gray-400">
+                            Duración: {reservation.duration} {reservation.duration === 1 ? 'hora' : 'horas'}
+                          </p>
+                          <p className="text-blue-400 font-semibold mt-1">
+                            Total: ${reservation.totalPrice}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`px-2 py-1 rounded text-sm ${
-                            reservation.status === 'pending'
-                              ? 'bg-yellow-500/20 text-yellow-300'
-                              : reservation.status === 'confirmed'
+                            reservation.status === 'active'
                               ? 'bg-green-500/20 text-green-300'
-                              : 'bg-red-500/20 text-red-300'
+                              : reservation.status === 'cancelled'
+                              ? 'bg-red-500/20 text-red-300'
+                              : 'bg-yellow-500/20 text-yellow-300'
                           }`}>
-                            {reservation.status === 'pending' ? 'Pendiente' :
-                             reservation.status === 'confirmed' ? 'Confirmada' : 'Cancelada'}
+                            {reservation.status === 'active' ? 'Confirmada' :
+                             reservation.status === 'cancelled' ? 'Cancelada' : 'Pendiente'}
                           </span>
-                          <span className="text-blue-400">${reservation.totalPrice}</span>
+                          {reservation.status === 'active' && (
+                            <button
+                              onClick={() => handleCancelReservation(reservation.id)}
+                              className="px-3 py-1 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-300"
+                            >
+                              Cancelar
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>

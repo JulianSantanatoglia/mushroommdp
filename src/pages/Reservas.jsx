@@ -186,12 +186,12 @@ const Reservas = () => {
 
   const getSlotClassName = (slot) => {
     if (!slot.isAvailable) {
-      return 'bg-red-500/20 text-red-300 border-red-500 cursor-not-allowed';
+      return 'bg-red-900/90 text-red-200 border-2 border-red-500 cursor-not-allowed relative group opacity-75';
     }
     if (selectedSlots.includes(slot.timeString)) {
       return 'bg-green-500/20 text-green-300 border-green-500';
     }
-    return 'bg-slate-700/50 text-gray-300 border-slate-600 hover:bg-slate-700';
+    return 'bg-slate-700/50 text-gray-300 border-slate-600 hover:bg-slate-700 hover:border-blue-500';
   };
 
   const handleBoothSelect = (boothId) => {
@@ -237,14 +237,13 @@ const Reservas = () => {
       const [hours, minutes] = selectedTime.split(':');
       startTime.setHours(parseInt(hours), parseInt(minutes), 0);
 
-      const reservationData = {
-        boothId: selectedBooth,
-        userId: user.uid,
+      const result = await reservationService.createReservation(
+        selectedBooth,
+        user.uid,
         startTime,
         duration
-      };
-
-      const result = await reservationService.createReservation(reservationData);
+      );
+      
       console.log('Reservation created:', result);
       
       // Guardar detalles de la reserva para el modal
@@ -272,7 +271,7 @@ const Reservas = () => {
   };
 
   const handleViewReservations = () => {
-    navigate('/perfil/reservas');
+    navigate('/perfil');
   };
 
   const handleInitializeBooths = async () => {
@@ -285,6 +284,31 @@ const Reservas = () => {
       alert('Error al inicializar las cabinas: ' + error.message);
     } finally {
       setIsInitializing(false);
+    }
+  };
+
+  const loadAvailableTimeSlots = async () => {
+    if (!selectedDate || !selectedBooth) {
+      setTimeSlots([]);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    try {
+      console.log('Cargando horarios para:', { selectedDate, selectedBooth });
+      const slots = await reservationService.getAvailableTimeSlots(
+        selectedBooth,
+        selectedDate,
+        selectedDuration
+      );
+      console.log('Horarios cargados:', slots);
+      setTimeSlots(slots);
+    } catch (error) {
+      console.error('Error al cargar horarios:', error);
+      setError('Error al cargar los horarios disponibles. Por favor, intenta nuevamente.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -426,6 +450,41 @@ const Reservas = () => {
                       ]}
                       popperPlacement="bottom-start"
                       shouldCloseOnSelect={true}
+                      renderCustomHeader={({
+                        date,
+                        decreaseMonth,
+                        increaseMonth,
+                        prevMonthButtonDisabled,
+                        nextMonthButtonDisabled,
+                      }) => (
+                        <div className="flex items-center justify-between px-2 py-2">
+                          <button
+                            onClick={decreaseMonth}
+                            disabled={prevMonthButtonDisabled}
+                            type="button"
+                            className="p-1 hover:bg-slate-700 rounded-lg transition-colors"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                            </svg>
+                          </button>
+                          <span className="text-lg font-semibold">
+                            {date.toLocaleString('es', { month: 'long', year: 'numeric' })}
+                          </span>
+                          <button
+                            onClick={increaseMonth}
+                            disabled={nextMonthButtonDisabled}
+                            type="button"
+                            className="p-1 hover:bg-slate-700 rounded-lg transition-colors"
+                          >
+                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                            </svg>
+                          </button>
+                        </div>
+                      )}
+                      showPopperArrow={false}
+                      fixedHeight
                     />
                   </div>
                 </div>
@@ -470,10 +529,27 @@ const Reservas = () => {
                         <button
                           key={slot.id}
                           onClick={() => handleTimeSelect(slot)}
-                          className={`py-2 rounded-lg transition-all duration-300 border ${getSlotClassName(slot)}`}
                           disabled={!slot.isAvailable}
+                          className={`py-2 rounded-lg transition-all duration-300 border ${
+                            !slot.isAvailable 
+                              ? 'bg-red-900/90 text-red-200 border-2 border-red-500 cursor-not-allowed opacity-75' 
+                              : selectedSlots.includes(slot.timeString)
+                                ? 'bg-green-500/20 text-green-300 border-green-500'
+                                : 'bg-slate-700/50 text-gray-300 border-slate-600 hover:bg-slate-700 hover:border-blue-500'
+                          }`}
                         >
-                          {slot.timeString}
+                          <div className="relative flex items-center justify-center">
+                            <span className={`${!slot.isAvailable ? 'line-through opacity-50' : ''}`}>
+                              {slot.timeString}
+                            </span>
+                            {!slot.isAvailable && (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
                         </button>
                       ))
                     ) : (
