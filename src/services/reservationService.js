@@ -157,8 +157,6 @@ export const getAvailableTimeSlots = async (boothId, date, duration = 1) => {
         return reservationDate >= startOfDay && reservationDate < endOfDay;
       });
 
-    console.log('Reservas activas encontradas:', activeReservations.length);
-
     // Crear un mapa de slots ocupados
     const occupiedSlots = new Set();
     activeReservations.forEach(reservation => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../firebase/config';
@@ -15,6 +15,7 @@ registerLocale('es', es);
 const Reservas = () => {
   const navigate = useNavigate();
   const { user, openLoginModal } = useAuth();
+  const dateTimeRef = useRef(null);
   const [selectedBooth, setSelectedBooth] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedTime, setSelectedTime] = useState(null);
@@ -198,6 +199,14 @@ const Reservas = () => {
     setSelectedBooth(boothId);
     setSelectedDate(null);
     setSelectedTime(null);
+    
+    // Scroll suave a la sección de fecha y hora
+    setTimeout(() => {
+      dateTimeRef.current?.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'start'
+      });
+    }, 100);
   };
 
   const handleDurationChange = (hours) => {
@@ -243,7 +252,7 @@ const Reservas = () => {
         startTime,
         duration
       );
-      
+
       console.log('Reservation created:', result);
       
       // Guardar detalles de la reserva para el modal
@@ -410,6 +419,7 @@ const Reservas = () => {
 
         {selectedBooth && (
           <motion.div
+            ref={dateTimeRef}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-slate-800/50 backdrop-blur-xl rounded-xl p-4 md:p-6 mb-8"
@@ -444,11 +454,18 @@ const Reservas = () => {
                         {
                           name: "offset",
                           options: {
-                            offset: [0, 8]
+                            offset: [0, -10]
+                          }
+                        },
+                        {
+                          name: "flip",
+                          options: {
+                            fallbackPlacements: ["top-start"],
+                            allowedAutoPlacements: ["top-start"]
                           }
                         }
                       ]}
-                      popperPlacement="bottom-start"
+                      popperPlacement="top-start"
                       shouldCloseOnSelect={true}
                       renderCustomHeader={({
                         date,
@@ -540,7 +557,7 @@ const Reservas = () => {
                         >
                           <div className="relative flex items-center justify-center">
                             <span className={`${!slot.isAvailable ? 'line-through opacity-75' : ''}`}>
-                              {slot.timeString}
+                          {slot.timeString}
                             </span>
                             {!slot.isAvailable && (
                               <div className="absolute inset-0 flex items-center justify-center">

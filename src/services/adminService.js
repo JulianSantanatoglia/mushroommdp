@@ -20,7 +20,7 @@ export const makeUserAdmin = async (userId) => {
   try {
     const userRef = doc(db, 'users', userId);
     await updateDoc(userRef, {
-      isAdmin: true
+        isAdmin: true
     });
   } catch (error) {
     console.error('Error making user admin:', error);
