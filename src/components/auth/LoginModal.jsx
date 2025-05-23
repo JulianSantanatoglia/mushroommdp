@@ -13,7 +13,7 @@ const LoginModal = () => {
   const [isResetPassword, setIsResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetSent, setResetSent] = useState(false);
-  const { login, loginWithGoogle, resetPassword, isLoginModalOpen, closeModals, openRegisterModal } = useAuth();
+  const { login, loginWithGoogle, resetPassword, isLoginModalOpen, closeModals, openRegisterModal, loading } = useAuth();
 
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -130,6 +130,7 @@ const LoginModal = () => {
         <button
           onClick={closeModals}
           className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors bg-transparent"
+          disabled={loading}
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -155,6 +156,7 @@ const LoginModal = () => {
                     validationErrors.email ? 'border-red-500' : 'border-slate-700'
                   } focus:border-blue-500 focus:outline-none text-white`}
                   required
+                  disabled={loading}
                 />
                 {validationErrors.email && (
                   <p className="text-red-500 text-sm mt-1">{validationErrors.email}</p>
@@ -168,18 +170,28 @@ const LoginModal = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 focus:border-blue-500 focus:outline-none text-white"
                   required
+                  disabled={loading}
                 />
               </div>
               <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-lg shadow-blue-500/20"
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-all duration-300 shadow-lg shadow-blue-500/20 relative"
+                disabled={loading}
               >
-                Iniciar Sesión
+                {loading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Iniciando sesión...
+                  </div>
+                ) : (
+                  'Iniciar sesión'
+                )}
               </button>
               <button
                 type="button"
                 onClick={handleGoogleLogin}
                 className="w-full bg-white hover:bg-gray-100 text-gray-800 font-medium py-2 px-4 rounded-lg transition-colors duration-300 flex items-center justify-center space-x-2"
+                disabled={loading}
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -209,6 +221,7 @@ const LoginModal = () => {
                     setIsResetPassword(true);
                   }}
                   className="text-blue-400 hover:text-blue-300 text-sm inline-block"
+                  style={{ pointerEvents: loading ? 'none' : 'auto' }}
                 >
                   ¿Olvidaste tu contraseña?
                 </a>
@@ -222,6 +235,7 @@ const LoginModal = () => {
                       openRegisterModal();
                     }}
                     className="text-blue-400 hover:text-blue-300 inline-block"
+                    style={{ pointerEvents: loading ? 'none' : 'auto' }}
                   >
                     Regístrate
                   </a>
