@@ -139,7 +139,10 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       await signOut(auth);
       setUser(null);
-      window.location.reload();
+      window.location.href = '/';
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
     } catch (error) {
       console.error('Logout error:', error);
       setError(error.message);
